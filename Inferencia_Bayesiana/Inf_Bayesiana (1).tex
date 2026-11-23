@@ -1,0 +1,1382 @@
+\documentclass[11pt]{article}
+
+% ==================== PAQUETES ====================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\IfFileExists{spanish.ldf}{\usepackage[spanish,es-tabla]{babel}}{}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=black,citecolor=black}
+
+% ==================== NOTACIÓN ====================
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\IG}{\mathcal{IG}}
+\newcommand{\Ga}{\mathcal{G}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\vecop}{\operatorname{vec}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\ind}{\mathbb{1}}
+\newcommand{\bpar}{\bm{\beta}}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\by}{\mathbf{y}}
+\newcommand{\bY}{\mathbf{Y}}
+\newcommand{\bz}{\mathbf{z}}
+\newcommand{\bB}{\mathbf{B}}
+\newcommand{\bI}{\mathbf{I}}
+\newcommand{\bV}{\mathbf{V}}
+\newcommand{\bW}{\mathbf{W}}
+\newcommand{\bSig}{\bm{\Sigma}}
+\newcommand{\bmu}{\bm{\mu}}
+\newcommand{\beps}{\bm{\varepsilon}}
+\newcommand{\bOm}{\bm{\Omega}}
+\newcommand{\kron}{\otimes}
+\newcommand{\dpar}{\mathrm{d}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\theoremstyle{definition}
+\newtheorem{prop}{Proposición}
+
+\title{\textbf{Inferencia Bayesiana}\\[2pt]\large Notas de clase\footnote{Basado en mis notas de clase de los cursos \emph{Inferencia Bayesiana} y \emph{Econometría Macro Avanzada} de la maestría de la PUCP.}}
+\author{Josué David Cárdenas Barrantes}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Repaso de probabilidades}
+% ============================================================
+Una probabilidad es una transformación $P$ que asigna a cada evento $A$ de un espacio muestral $\Omega$ un número real $P(A)$ y que satisface los tres axiomas de la probabilidad:
+\begin{itemize}[leftmargin=2em]
+  \item[\textbf{A1}] Para cualquier evento $A$: $P(A)\ge 0$.
+  \item[\textbf{A2}] $P(\Omega)=1$.
+  \item[\textbf{A3}] Para eventos disjuntos $A_1,A_2,\dots$: $P\!\left(\bigcup_i A_i\right)=\sum_i P(A_i)$.
+\end{itemize}
+
+% ============================================================
+\section{Idea general}
+% ============================================================
+En el enfoque bayesiano, la pregunta que nos hacemos es diferente al enfoque frecuentista: \emph{¿qué tan probable es cada posible valor de $\beta$, dado que observé los datos?} La respuesta es una distribución completa.
+\[
+p(\beta\mid y)=\frac{p(y\mid\beta)\,p(\beta)}{p(y)}
+\]
+\begin{itemize}[leftmargin=2em]
+  \item $p(\beta\mid y)=$ lo que creo sobre $\beta$ después de ver los datos (\textbf{posterior}).
+  \item $p(y\mid\beta)=$ \textbf{verosimilitud}: qué tan probables son los datos dado el parámetro $\beta$.
+  \item $p(\beta)=$ \textbf{prior}: lo que creo sobre $\beta$ antes de ver los datos.
+  \item $p(y)=$ constante normalizadora.
+\end{itemize}
+\[
+p(\beta\mid y)\ \propto\ p(y\mid\beta)\,p(\beta)
+\]
+
+% ============================================================
+\section{Regresión lineal bayesiana}
+% ============================================================
+Se define el modelo de regresión simple
+\[
+y_t = X_t'\beta+\varepsilon_t,
+\]
+donde $\varepsilon_1,\dots,\varepsilon_T$ son errores i.i.d.\ $(0,\sigma^2)$, $X_t=(1,X_{1,t},\dots,X_{K-1,t})'$ son $K$ regresores y $\beta=(\beta_0,\beta_1,\dots,\beta_{K-1})'$ son los estimadores asociados.
+
+\subsection{Función de verosimilitud}
+En forma matricial,
+\[
+\underbrace{\begin{bmatrix}y_1\\ y_2\\ \vdots\\ y_T\end{bmatrix}}_{T\times 1}
+=
+\underbrace{\begin{bmatrix}
+1 & X_{1,1} & \cdots & X_{K-1,1}\\
+1 & X_{1,2} & \cdots & X_{K-1,2}\\
+\vdots & \vdots & & \vdots\\
+1 & X_{1,T} & \cdots & X_{K-1,T}
+\end{bmatrix}}_{T\times K}
+\underbrace{\begin{bmatrix}\beta_0\\ \beta_1\\ \vdots\\ \beta_{K-1}\end{bmatrix}}_{K\times1}
++
+\underbrace{\begin{bmatrix}\varepsilon_1\\ \varepsilon_2\\ \vdots\\ \varepsilon_T\end{bmatrix}}_{T\times1},
+\qquad
+\bY_{T\times1}=\bX_{T\times K}\,\bpar_{K\times1}+\beps_{T\times1}.
+\]
+Los errores tienen distribución normal multivariada $\beps\sim\N(\mathbf{0}_{T\times1},\sigma^2\bI_T)$. Si $X$ es exógeno, entonces $(\by\mid\beta,\sigma^2)\sim\N(\bX\beta,\sigma^2\bI_T)$, y la verosimilitud es
+\begin{align*}
+\mathcal{L}(\beta,\sigma^2)=p(\by\mid\beta,\sigma^2)
+&=|2\pi\sigma^2\bI_T|^{-1/2}\exp\!\left(-\tfrac{1}{2\sigma^2}(\by-\bX\beta)'(\by-\bX\beta)\right)\\
+&=(2\pi\sigma^2)^{-T/2}\exp\!\left(-\tfrac{1}{2\sigma^2}(\by-\bX\beta)'(\by-\bX\beta)\right)\\
+&\propto (\sigma^2)^{-T/2}\exp\!\left(-\tfrac{1}{2\sigma^2}(\by-\bX\beta)'(\by-\bX\beta)\right),
+\end{align*}
+donde $|\cdot|$ denota el determinante y se cumple que, para un escalar $c$ y una matriz $A$ de dimensión $T\times T$, $|cA|=c^{T}|A|$.
+
+\subsection{Descomposición OLS}
+Los estimadores OLS de $\beta$ y $\sigma^2$ son
+\[
+\hat\beta=(\bX'\bX)^{-1}(\bX'\by),\qquad
+s^2=\frac{(\by-\bX\hat\beta)'(\by-\bX\hat\beta)}{T-K}\ \ (\text{ajustado por grados de libertad}).
+\]
+Expandiendo el término cuadrático,
+\begin{align*}
+(\by-\bX\beta)'(\by-\bX\beta)
+&=(\by-\bX\hat\beta+\bX\hat\beta-\bX\beta)'(\by-\bX\hat\beta+\bX\hat\beta-\bX\beta)\\
+&=\big[(\by-\bX\hat\beta)-\bX(\beta-\hat\beta)\big]'\big[(\by-\bX\hat\beta)-\bX(\beta-\hat\beta)\big]\\
+&=(\by-\bX\hat\beta)'(\by-\bX\hat\beta)+(\beta-\hat\beta)'\bX'\bX(\beta-\hat\beta)\\
+&=(T-K)\,s^2+(\beta-\hat\beta)'\bX'\bX(\beta-\hat\beta),
+\end{align*}
+donde los términos cruzados se anulan porque
+\[
+\bX'(\by-\bX\hat\beta)=\bX'\big(\by-\bX(\bX'\bX)^{-1}\bX'\by\big)=\big(\bX'-\bX'\bX(\bX'\bX)^{-1}\bX'\big)\by=\mathbf{0}.
+\]
+Reemplazando en la verosimilitud,
+\[
+\mathcal{L}(\beta,\sigma^2)\propto(\sigma^2)^{-T/2}\exp\!\left(-\tfrac12\Big[(T-K)\tfrac{s^2}{\sigma^2}+(\beta-\hat\beta)'\tfrac{\bX'\bX}{\sigma^2}(\beta-\hat\beta)\Big]\right).
+\]
+
+\subsection{Distribuciones prior}
+Se asumen priors independientes $\beta\sim\N(\underline{\beta},\underline{\bV}_\beta)$ ($K\times1$, $K\times K$) y $\sigma^2\sim\IG(\underline{\nu},\underline{S})$:
+\begin{align*}
+p(\beta)&=(2\pi)^{-K/2}|\underline{\bV}_\beta|^{-1/2}\exp\!\left(-\tfrac12(\beta-\underline{\beta})'\underline{\bV}_\beta^{-1}(\beta-\underline{\beta})\right)
+\propto\exp\!\left(-\tfrac12(\beta-\underline{\beta})'\underline{\bV}_\beta^{-1}(\beta-\underline{\beta})\right),\\[4pt]
+p(\sigma^2)&=\frac{\underline{S}^{\underline{\nu}}}{\Gamma(\underline{\nu})}(\sigma^2)^{-(\underline{\nu}+1)}\exp\!\left(-\tfrac{1}{\sigma^2}\underline{S}\right)
+\propto(\sigma^2)^{-(\underline{\nu}+1)}\exp\!\left(-\tfrac{1}{\sigma^2}\underline{S}\right).
+\end{align*}
+La constante de $p(\beta)$ se obvia porque no depende de $\beta$; queda el kernel de una normal. Análogamente $p(\sigma^2)$ es el kernel de una Inverse-Gamma. La prior conjunta (por independencia) es
+\[
+p(\beta,\sigma^2)=p(\beta)\,p(\sigma^2)
+\propto\Big\{\exp\!\big(-\tfrac12(\beta-\underline{\beta})'\underline{\bV}_\beta^{-1}(\beta-\underline{\beta})\big)\Big\}
+\Big\{(\sigma^2)^{-(\underline{\nu}+1)}\exp\!\big(-\tfrac{1}{\sigma^2}\underline{S}\big)\Big\}.
+\]
+
+\subsection{Distribución posterior conjunta}
+\begin{align*}
+p(\beta,\sigma^2\mid\by)&\propto p(\by\mid\beta,\sigma^2)\,p(\beta,\sigma^2)\\
+&\propto\Big\{(\sigma^2)^{-T/2}\exp\!\big(-\tfrac12[(T-K)\tfrac{s^2}{\sigma^2}+(\beta-\hat\beta)'\tfrac{\bX'\bX}{\sigma^2}(\beta-\hat\beta)]\big)\Big\}\\
+&\quad\times\Big\{\exp\!\big(-\tfrac12(\beta-\underline{\beta})'\underline{\bV}_\beta^{-1}(\beta-\underline{\beta})\big)\times(\sigma^2)^{-(\underline{\nu}+1)}\exp\!\big(-\tfrac{1}{\sigma^2}\underline{S}\big)\Big\}.
+\end{align*}
+Esta expresión no tiene forma cerrada, por lo que se simula mediante los algoritmos de \textbf{Gibbs Sampling} y \textbf{Metropolis--Hastings}.
+
+\subsection{Distribuciones condicionales (Gibbs Sampling)}
+
+\paragraph{Condicional de $\sigma^2$ (fijando $\beta$).}
+\begin{align*}
+p(\sigma^2\mid\beta,\by)&=p(\by\mid\beta,\sigma^2)\,p(\sigma^2\mid\beta)\\
+&\propto(\sigma^2)^{-T/2}\exp\!\big(-\tfrac{1}{2\sigma^2}(\by-\bX\beta)'(\by-\bX\beta)\big)\times(\sigma^2)^{-(\underline{\nu}+1)}\exp\!\big(-\tfrac{1}{\sigma^2}\underline{S}\big)\\
+&\propto(\sigma^2)^{-(\frac{T}{2}+\underline{\nu}+1)}\exp\!\left(-\tfrac{1}{\sigma^2}\Big[\underline{S}+\tfrac12(\by-\bX\beta)'(\by-\bX\beta)\Big]\right).
+\end{align*}
+La forma funcional es la de una Inverse-Gamma:
+\[
+p(\sigma^2\mid\beta,\by)\sim\IG\!\left(\tfrac{T}{2}+\underline{\nu},\ \underline{S}+\tfrac12(\by-\bX\beta)'(\by-\bX\beta)\right)\equiv\IG(\bar\nu,\bar S),
+\]
+con $\bar\nu=\underline{\nu}+\tfrac{T}{2}$ y $\bar S=\underline{S}+\tfrac12(\by-\bX\beta)'(\by-\bX\beta)$.
+
+\paragraph{Condicional de $\beta$ (fijando $\sigma^2$).}
+\begin{align*}
+p(\beta\mid\sigma^2,\by)
+&\propto\exp\!\left(-\tfrac12\Big[(\beta-\hat\beta)'\tfrac{\bX'\bX}{\sigma^2}(\beta-\hat\beta)+(\beta-\underline{\beta})'\underline{\bV}_\beta^{-1}(\beta-\underline{\beta})\Big]\right).
+\end{align*}
+Expandiendo los términos cuadráticos,
+\begin{align*}
+(\beta-\underline{\beta})'\underline{\bV}_\beta^{-1}(\beta-\underline{\beta})&=\beta'\underline{\bV}_\beta^{-1}\beta-2\beta'\underline{\bV}_\beta^{-1}\underline{\beta}+\text{cte},\\
+(\beta-\hat\beta)'\tfrac{\bX'\bX}{\sigma^2}(\beta-\hat\beta)&=\beta'\tfrac{\bX'\bX}{\sigma^2}\beta-2\beta'\tfrac{\bX'\bX}{\sigma^2}\hat\beta+\text{cte},
+\end{align*}
+y reemplazando,
+\begin{align*}
+p(\beta\mid\sigma^2,\by)
+&\propto\exp\!\left(-\tfrac12\Big[\beta'\underline{\bV}_\beta^{-1}\beta-2\beta'\underline{\bV}_\beta^{-1}\underline{\beta}+\beta'\tfrac{\bX'\bX}{\sigma^2}\beta-2\beta'\tfrac{\bX'\bX}{\sigma^2}\hat\beta\Big]\right)\\
+&\propto\exp\!\left(-\tfrac12\Big[\beta'\big(\underline{\bV}_\beta^{-1}+\tfrac{1}{\sigma^2}\bX'\bX\big)\beta-2\beta'\big(\underline{\bV}_\beta^{-1}\underline{\beta}+\tfrac{1}{\sigma^2}\bX'\by\big)\Big]\right).
+\end{align*}
+
+\paragraph{Identificación de la normal.}
+Para una gaussiana multivariada $\beta\sim\N(\mu,\Sigma)$ el exponente es
+$(\beta-\mu)'\Sigma^{-1}(\beta-\mu)=\beta'\Sigma^{-1}\beta-2\beta'\Sigma^{-1}\mu+\text{cte}$. Comparando,
+\[
+\bar\bV_\beta=\Big(\underline{\bV}_\beta^{-1}+\tfrac{1}{\sigma^2}\bX'\bX\Big)^{-1},\qquad
+\bar\beta=\bar\bV_\beta\Big(\underline{\bV}_\beta^{-1}\underline{\beta}+\tfrac{1}{\sigma^2}\bX'\by\Big),
+\]
+de modo que
+\[
+p(\beta\mid\sigma^2,\by)\sim\N(\bar\beta,\bar\bV_\beta).
+\]
+
+\subsection{Algoritmo de Gibbs Sampling}
+Proponemos un punto inicial $\beta^{(0)}=a_0$ y $\sigma^{2(0)}=b_0>0$ (condiciones iniciales). Sampleamos $i=N+B$ iteraciones:
+\begin{enumerate}[leftmargin=2em]
+  \item Simular $\beta^{(i)}$ de $p(\beta^{(i)}\mid\sigma^{2(i-1)},\by)\sim\N(\bar\beta,\bar\bV_\beta)$.
+  \item Simular $\sigma^{2(i)}$ de $p(\sigma^{2(i)}\mid\beta^{(i)},\by)\sim\IG(\bar\nu,\bar S)$.
+\end{enumerate}
+Para evitar la influencia de las condiciones iniciales se \emph{queman} las primeras $B$ simulaciones (\emph{burn-in}) hasta llegar a la distribución posterior; se conservan las $N$ finales.
+
+\subsection{Prior menos informativa}
+En la medida que queramos que la prior $\beta\sim\N(\underline{\beta},\underline{\bV}_\beta)$ sea menos informativa, elevamos el valor de la varianza. A partir de
+\[
+\bar\beta=\Big[\underline{\bV}_\beta^{-1}+\tfrac{1}{\sigma^2}\bX'\bX\Big]^{-1}\Big[\underline{\bV}_\beta^{-1}\underline{\beta}+\tfrac{1}{\sigma^2}\bX'\by\Big],
+\]
+cuando $\underline{\bV}_\beta\to\infty$ se tiene $\underline{\bV}_\beta^{-1}\to 0$, por lo tanto
+\[
+\bar\beta=\Big[\tfrac{1}{\sigma^2}\bX'\bX\Big]^{-1}\Big[\tfrac{1}{\sigma^2}\bX'\by\Big]=(\bX'\bX)^{-1}\bX'\by=\hat\beta_{\text{OLS}}.
+\]
+Mientras más pequeña sea la varianza de la prior, más informativa es y más pesa la prior; mientras más grande, más peso tiene la verosimilitud. En el límite, la prior no aporta nada y el estimador coincide con OLS/ML.
+
+% ============================================================
+\section{Herramientas para BVAR}
+% ============================================================
+\subsection{Vectorización de matrices}
+La operación $\vecop(A)$ toma una matriz $m\times n$ y la convierte en un vector columna $mn\times1$ apilando las columnas. Si $A=\begin{bmatrix}a_{11}&a_{12}\\ a_{21}&a_{22}\end{bmatrix}$, entonces $\vecop(A)=(a_{11},a_{21},a_{12},a_{22})'$.
+
+\paragraph{Propiedad 1: Linealidad.}
+$\vecop(A+B)=\vecop(A)+\vecop(B)$, \quad $\vecop(\alpha A)=\alpha\,\vecop(A)$.
+
+\paragraph{Propiedad 2: Puente con Kronecker.}
+Para matrices $A,B,C$:
+\[
+\vecop(ABC)=(C^{\top}\kron A)\,\vecop(B).
+\]
+Casos especiales: si $C=I$, $\vecop(AB)=(I\kron A)\vecop(B)$; si $A=I$, $\vecop(BC)=(C^{\top}\kron I)\vecop(B)$.
+
+\paragraph{Propiedad 3: Traza y formas cuadráticas.}
+\[
+\tr(A^{\top}B)=\vecop(A)^{\top}\vecop(B),\qquad
+\vecop(B)^{\top}(C\kron A)\vecop(B)=\tr(B^{\top}ABC).
+\]
+
+\paragraph{Producto de Kronecker.}
+$A_{m\times n}\kron B_{p\times q}=(A\kron B)_{mp\times nq}$: las dimensiones se multiplican. Por ejemplo $I_n\kron X_{T\times K}=(I_n\kron X)_{nT\times nK}$.
+
+\subsection{BVAR}
+Sea el modelo VAR($p$):
+\[
+Y_t=C+\Phi_1 Y_{t-1}+\Phi_2 Y_{t-2}+\cdots+\Phi_p Y_{t-p}+E_t,\qquad E_t\overset{i.i.d.}{\sim}\N(0,\Omega),
+\]
+con $Y_t$ de $n\times1$, $\Phi_j$ de $n\times n$, $E_t$ de $n\times1$, $C$ de $n\times1$ y $t=1,\dots,T$. Definimos
+\[
+X_t=\begin{bmatrix}1 & Y_{t-1}' & Y_{t-2}' & \cdots & Y_{t-p}'\end{bmatrix}\ \ (1+np\ \text{elementos}=K),\qquad
+B=\begin{bmatrix}C & \Phi_1 & \Phi_2 & \cdots & \Phi_p\end{bmatrix}'.
+\]
+Verificamos que $X_t,B$ reproducen la ecuación original:
+\[
+X_t B=1\cdot C'+Y_{t-1}'\Phi_1+\cdots+Y_{t-p}'\Phi_p=C+\Phi_1 Y_{t-1}+\cdots+\Phi_p Y_{t-p}.
+\]
+Apilando $T$ períodos, $Y_t'=X_t B$ para cada $t$:
+\[
+\underbrace{\begin{bmatrix}Y_1'\\ Y_2'\\ \vdots\\ Y_T'\end{bmatrix}}_{T\times n}
+=\underbrace{\begin{bmatrix}X_1\\ X_2\\ \vdots\\ X_T\end{bmatrix}}_{T\times K}
+\underbrace{B}_{K\times n}+\underbrace{E}_{T\times n},
+\qquad Y=XB+E.
+\]
+Vectorizando,
+\[
+\vecop(Y)=(I_n\kron X)\vecop(B)+\vecop(E),\qquad \vecop(E)\sim\N(0,\Omega\kron I_T).
+\]
+
+\subsection{Verosimilitud del BVAR}
+En el modelo $\by=(I_n\kron X)\beta+\beps$, con $\beps\sim\N(0,\Omega\kron I_T)$, entonces $\by\mid\beta,\Omega\sim\N\big((I_n\kron X)\beta,\ \Omega\kron I_T\big)$, y
+\[
+\mathcal{L}(\beta,\Omega)=\frac{1}{(2\pi)^{M}\det(\Omega\kron I_T)^{1/2}}
+\exp\!\left(-\tfrac12\big(\by-(I_n\kron X)\beta\big)'(\Omega^{-1}\kron I_T)\big(\by-(I_n\kron X)\beta\big)\right).
+\]
+
+% ============================================================
+\section{Modelo Normal: media desconocida, varianza conocida}
+% ============================================================
+\textbf{Modelo:} $Y_1,\dots,Y_n\overset{i.i.d.}{\sim}\N(\mu,\sigma^2)$, $i=1,\dots,n$, con $\mu$ desconocida y $\sigma^2$ conocida.\\
+\textbf{Problema:} $\mu\mid Y_1,\dots,Y_n=?$
+
+\paragraph{Verosimilitud.}
+\[
+p(Y_1,\dots,Y_n\mid\mu)=\prod_{i=1}^n\frac{1}{\sqrt{2\pi\sigma^2}}\exp\!\left(-\frac{(Y_i-\mu)^2}{2\sigma^2}\right)
+=(2\pi\sigma^2)^{-n/2}\exp\!\left(-\frac{1}{2\sigma^2}\sum_{i=1}^n(Y_i-\mu)^2\right).
+\]
+
+\paragraph{Prior.} $\mu\sim\N(\mu_0,\tau_0^2)$.
+
+\paragraph{Posterior.}
+\[
+p(\mu\mid Y)=\frac{p(Y\mid\mu)\,p(\mu)}{p(Y_1,\dots,Y_n)}
+\propto\exp\!\left(-\frac{1}{2\sigma^2}\sum_{i=1}^n(Y_i-\mu)^2\right)\exp\!\left(-\frac{1}{2\tau_0^2}(\mu-\mu_0)^2\right).
+\]
+Solo mantenemos los términos que dependen de $\mu$. El exponente es
+\[
+-\tfrac12\left\{\frac{1}{\sigma^2}\Big[\sum_i Y_i^2-2\mu\sum_i Y_i+n\mu^2\Big]+\frac{1}{\tau_0^2}\big[\mu^2-2\mu\mu_0+\mu_0^2\big]\right\}.
+\]
+Factorizando en $\mu$:
+\[
+\left(\frac{n}{\sigma^2}+\frac{1}{\tau_0^2}\right)\mu^2-2\left(\frac{\sum_i Y_i}{\sigma^2}+\frac{\mu_0}{\tau_0^2}\right)\mu.
+\]
+Llamamos $a=\dfrac{n}{\sigma^2}+\dfrac{1}{\tau_0^2}$ y $b=\dfrac{\sum_{i=1}^n Y_i}{\sigma^2}+\dfrac{\mu_0}{\tau_0^2}$. Completando cuadrados,
+\[
+a\mu^2-2b\mu=a\Big(\mu^2-\tfrac{2b}{a}\mu+\tfrac{b^2}{a^2}-\tfrac{b^2}{a^2}\Big)=a\Big(\mu-\tfrac{b}{a}\Big)^2-\tfrac{b^2}{a},
+\]
+donde $b^2/a$ no depende de $\mu$. Por lo tanto
+\[
+\exp\!\left(-\tfrac{a}{2}\Big(\mu-\tfrac{b}{a}\Big)^2\right)=\exp\!\left(-\frac{1}{2\,(1/a)}\Big(\mu-\tfrac{b}{a}\Big)^2\right)
+\ \Rightarrow\ \mu_n=\tfrac{b}{a},\ \sigma_n^2=\tfrac{1}{a},
+\]
+que es el kernel de una densidad normal.
+
+\paragraph{Posterior.}
+\[
+\mu\mid Y_1,\dots,Y_n\sim\N(\mu_n,\sigma_n^2),
+\]
+donde
+\[
+\E[\mu\mid Y]=\frac{b}{a}
+=\underbrace{\frac{n/\sigma^2}{n/\sigma^2+1/\tau_0^2}}_{\text{peso de datos}}\bar Y+\underbrace{\frac{1/\tau_0^2}{n/\sigma^2+1/\tau_0^2}}_{\text{peso de prior}}\mu_0,
+\qquad
+\Var[\mu\mid Y]=a^{-1}=\left(\frac{n}{\sigma^2}+\frac{1}{\tau_0^2}\right)^{-1},
+\]
+usando $\sum_i Y_i=n\bar Y$. A más datos o más confianza a priori, más precisión a posteriori y varianza más chica. Notar que $\sigma^2/n$ es la varianza de $\bar X$ ($n/\sigma^2$ su precisión) y $\tau_0^2$ es la varianza a priori ($\tau_0^{-2}$ su precisión). \emph{Si el kernel de $p(\mu\mid Y)$ tiene la forma matemática del kernel de una distribución conocida, son la misma.}
+
+\subsection{Distribución predictiva}
+Dado que ya observé $Y$, ¿cómo se distribuye una nueva observación $\tilde Y$? Con $Y_i\overset{i.i.d.}{\sim}\N(\mu,\sigma^2)$, $\mu\sim\N(\mu_0,\sigma_0^2)$ y $\mu\mid Y\sim\N(\mu_n,\sigma_n^2)$:
+\[
+\tilde Y\mid Y\sim\N(\mu_n,\ \sigma^2+\sigma_n^2).
+\]
+\begin{align*}
+\E[\tilde Y\mid Y]&=\E\big[\E[\tilde Y\mid\mu,Y]\big]=\E[\mu\mid Y]=\mu_n,\\
+\Var[\tilde Y\mid Y]&=\E\big[\Var[\tilde Y\mid\mu,Y]\big]+\Var\big[\E[\tilde Y\mid\mu,Y]\big]=\sigma^2+\Var[\mu\mid Y]=\sigma^2+\sigma_n^2.
+\end{align*}
+
+% ============================================================
+\section{Modelo Normal: media conocida, varianza desconocida}
+% ============================================================
+\textbf{Modelo:} $Y_1,\dots,Y_n\overset{i.i.d.}{\sim}\N(\mu,\sigma^2)$, con $\mu$ conocida y $\sigma^2$ desconocida.\\
+\textbf{Problema:} $\sigma^2\mid Y_1,\dots,Y_n$.
+
+\paragraph{Posterior.}
+\[
+p(\sigma^2\mid Y,\mu)=\frac{p(Y\mid\mu,\sigma^2)\,p(\sigma^2)}{p(Y_1,\dots,Y_n)}
+\propto(\sigma^{-2})^{n/2}\exp\!\left(-\sigma^{-2}\sum_{i=1}^n\frac{(Y_i-\mu)^2}{2}\right)p(\sigma^2).
+\]
+
+\paragraph{Prior conjugada.} La precisión $\sigma^{-2}\sim\Ga(\alpha,\beta)$, equivalentemente $\sigma^2\sim\IG(\alpha,\beta)$. Con $X\sim\IG(\alpha,\beta)$:
+\[
+f(x)=\frac{\beta^\alpha}{\Gamma(\alpha)}x^{-\alpha-1}\exp(-\beta/x),\ x>0,
+\]
+\[
+\E[X]=\frac{\beta}{\alpha-1},\qquad \Var[X]=\frac{\beta^2}{(\alpha-1)^2(\alpha-2)},\qquad \text{Moda}[X]=\frac{\beta}{\alpha+1}.
+\]
+
+\paragraph{Posterior.}
+\begin{align*}
+p(\sigma^2\mid Y,\mu)&\propto(\sigma^{-2})^{n/2}\exp\!\left(-\sigma^{-2}\sum_{i=1}^n\frac{(Y_i-\mu)^2}{2}\right)\times(\sigma^2)^{-\alpha-1}\exp(-\beta\sigma^{-2})\\
+&=(\sigma^2)^{-0.5n-\alpha-1}\exp\!\left(-\Big(\sum_{i=1}^n\frac{(Y_i-\mu)^2}{2}+\beta\Big)\Big/\sigma^2\right),
+\end{align*}
+que es el kernel de una Inverse-Gamma. Entonces
+\[
+\sigma^2\mid Y\sim\IG\!\left(0.5n+\alpha,\ 0.5\sum_{i=1}^n(Y_i-\mu)^2+\beta\right),
+\qquad
+\E[\sigma^2\mid Y]=\frac{\tilde\beta}{\tilde\alpha-1}=\frac{\tfrac12\sum(Y_i-\mu)^2+\beta}{\tfrac{n}{2}+\alpha-1}.
+\]
+
+% ============================================================
+\section{Modelo Normal: media y varianza desconocidas}
+% ============================================================
+\textbf{Modelo:} $Y_1,\dots,Y_n\overset{i.i.d.}{\sim}\N(\mu,\sigma^2)$, con $\mu$ y $\sigma^2$ desconocidas.\\
+\textbf{Problema:} $(\mu,\sigma^2)\mid Y_1,\dots,Y_n=?$
+\[
+p(\mu,\sigma^2\mid Y)\propto p(Y\mid\sigma^2,\mu)\,p(\mu\mid\sigma^2)\,\underbrace{p(\sigma^2)}_{\text{marginal de }\sigma^2}.
+\]
+Si $\sigma^2$ es conocido, la prior conjugada de $\mu$ es $\N(\mu_0,\tau_0^2)$; en particular asumimos $\tau_0^2=\dfrac{\sigma^2}{\kappa_0}$. Si $\mu$ es conocido, la prior conjugada de $\sigma^2$ es $\IG(\alpha,\beta)$.
+
+\paragraph{Posterior para $\mu$.}
+\[
+\mu\mid Y_1,\dots,Y_n,\sigma^2\sim\N(\mu_n,\sigma_n^2),
+\]
+\[
+\E[\mu\mid Y,\sigma^2]=\frac{n/\sigma^2}{n/\sigma^2+1/\tau_0^2}\,\bar Y+\frac{1/\tau_0^2}{n/\sigma^2+1/\tau_0^2}\,\mu_0,
+\qquad
+\Var[\mu\mid Y,\sigma^2]=\left(\frac{n}{\sigma^2}+\frac{\kappa_0}{\sigma^2}\right)^{-1}=\frac{\sigma^2}{\kappa_0+n}.
+\]
+
+\paragraph{Posterior para $\sigma^2$ (marginalizando $\mu$).}
+\[
+p(\sigma^2\mid Y)\propto p(\sigma^2)\int p(Y_1,\dots,Y_n\mid\mu,\sigma^2)\,p(\mu\mid\sigma^2)\,\dpar\mu.
+\]
+Con verosimilitud $\propto(\sigma^2)^{-n/2}\exp\!\big(-\tfrac{\sum(Y_i-\mu)^2}{2\sigma^2}\big)$, prior de $\mu\mid\sigma^2$ con $\tau_0^2=\sigma^2/\kappa_0$ $\propto(\sigma^2)^{-1/2}\exp\!\big(-\tfrac{\kappa_0(\mu-\mu_0)^2}{2\sigma^2}\big)$, y prior de $\sigma^2$ $\propto(\sigma^2)^{-\alpha-1}\exp(-\beta/\sigma^2)$. Multiplicando verosimilitud y prior de $\mu$ y juntando exponentes:
+\[
+(\sigma^2)^{-(n+1)/2}\int\exp\!\left(-\frac{1}{2\sigma^2}\Big[\sum(Y_i-\mu)^2+\kappa_0(\mu-\mu_0)^2\Big]\right)\dpar\mu.
+\]
+Expandiendo,
+\[
+\sum(Y_i-\mu)^2+\kappa_0(\mu-\mu_0)^2=(n+\kappa_0)\mu^2-2(n\bar Y+\kappa_0\mu_0)\mu+\underbrace{\big(\textstyle\sum Y_i^2+\kappa_0\mu_0^2\big)}_{\text{no depende de }\mu}.
+\]
+Con $A=n+\kappa_0$ y $B=n\bar Y+\kappa_0\mu_0$, completando cuadrados y notando que $B/A=\mu_n$,
+\[
+A\mu^2-2B\mu=A\Big(\mu-\tfrac{B}{A}\Big)^2-\tfrac{B^2}{A}=(n+\kappa_0)(\mu-\mu_n)^2-\frac{(n\bar Y+\kappa_0\mu_0)^2}{n+\kappa_0}.
+\]
+La integral en $\mu$ es
+\[
+\int\exp\!\left(-\frac{(n+\kappa_0)(\mu-\mu_n)^2}{2\sigma^2}\right)\dpar\mu=\sqrt{2\pi\,\frac{\sigma^2}{n+\kappa_0}}\ \propto\ (\sigma^2)^{1/2},
+\]
+usando que toda densidad normal integra $1$. Reemplazando,
+\begin{multline*}
+(\sigma^2)^{-n/2}\cdot(\sigma^2)^{-1/2}\cdot(\sigma^2)^{1/2}\cdot(\sigma^2)^{-\alpha-1}\\
+=(\sigma^2)^{-n/2-\alpha-1}\exp\!\left(-\frac{1}{\sigma^2}\underbrace{\left[\frac{\sum_i Y_i^2+\kappa_0\mu_0^2}{2}-\frac{(n\bar Y+\kappa_0\mu_0)^2}{2(n+\kappa_0)}+\beta\right]}_{\tilde\beta}\right).
+\end{multline*}
+Comparando exponentes: $-n/2-\alpha-1=-\tilde\alpha-1\Rightarrow\tilde\alpha=\alpha+n/2$; y $\tilde\beta/\sigma^2$ ya identificado. Por lo tanto
+\[
+\sigma^2\mid Y\sim\IG(\tilde\alpha,\tilde\beta),\qquad
+\mu\mid Y_1,\dots,Y_n,\sigma^2\sim\N(\mu_n,\sigma_n^2).
+\]
+Se desea entender $\E[\mu\mid Y]$, $\Var[\mu\mid Y]$ y $P(\mu_1>\mu_2\mid Y)$. No se tiene la marginal de $\mu$ explícita.
+
+\subsection{Aproximación de Monte Carlo}
+\begin{enumerate}[leftmargin=2em]
+  \item Simular $\sigma^{2(i)}\sim\IG$.
+  \item Simular $\mu^{(i)}\sim\N$.
+\end{enumerate}
+Entonces $(\sigma^{2(1)},\mu^{(1)}),\dots,(\sigma^{2(S)},\mu^{(S)})$ es una muestra de la distribución conjunta a posteriori.
+
+% ============================================================
+\section{Algoritmo de Gibbs Sampling}
+% ============================================================
+
+\subsection{Recordar: Monte Carlo vs.\ Gibbs}
+El algoritmo de Gibbs trata de aproximar una distribución $f(X,Y)$.
+
+\paragraph{¿Cómo? Monte Carlo.} Se factoriza
+\[
+f(X,Y)=\underbrace{f(Y\mid X)}_{Y\mid X}\underbrace{f(X)}_{\text{modelo marginal de }X}.
+\]
+Con estos dos submodelos (\emph{independientes}) se generan pares independientes:
+\[
+X_1\to Y_1\Rightarrow(X_1,Y_1),\quad X_2\to Y_2\Rightarrow(X_2,Y_2),\quad X_3\to Y_3\Rightarrow(X_3,Y_3),\ \dots
+\]
+y se realizan las aproximaciones de Monte Carlo. Por la \textbf{Ley de los Grandes Números} (los promedios de la muestra convergen a los promedios del modelo):
+\[
+\E(XY)\xleftarrow{\ p\ }\frac{1}{n}\sum_{i=1}^n X_i Y_i,\qquad
+\E(X)\xleftarrow{\ p\ }\frac{1}{n}\sum_i X_i,\qquad
+\Cov(X,Y)\xleftarrow{\ p\ }\hat\rho.
+\]
+Requisito: errores i.i.d.
+
+\paragraph{Gibbs Sampling.} Permite las aproximaciones \emph{con dependencia} en la muestra. Necesito las condicionales $f(X\mid Y)$ y $f(Y\mid X)$, con las que genero una secuencia dependiente. Comienzo con ``$X_1$'' (viene del modelo $f(X)$ aleatoriamente), luego ``$Y_1$'' $\to$ ``$X_2$'' $\to$ ``$Y_2$'' $\to\cdots$: me turno entre las distribuciones condicionales. Se generan pares dependientes
+\[
+(X_1,Y_1),\ (X_2,Y_2),\ (X_3,Y_3),\ \dots
+\]
+Toda la información del pasado se guarda dentro de la muestra ``actual'': \textbf{es una cadena de Markov}.
+\begin{itemize}[leftmargin=2em]
+  \item No se puede aplicar la Ley de los Grandes Números (las muestras no son independientes).
+  \item En general, \emph{aproxima} una muestra independiente.
+  \item En Inferencia Bayesiana, el objetivo es aproximar $p(\theta\mid\text{Data})$.
+\end{itemize}
+
+\subsection{Ejemplo}
+Mismo modelo $Y_1,\dots,Y_n\sim\N(\mu,\sigma^2)$. La prior ahora se trabaja con $\sigma$ (desviación estándar):
+\[
+\mu\mid\sigma^2\sim\N\!\left(\mu_0,\tfrac{\sigma}{\sqrt{\kappa_0}}\right),\qquad
+1/\sigma\sim\Ga\!\left(\tfrac{\nu_0}{2},\tfrac{\nu_0\sigma_0^2}{2}\right).
+\]
+
+\paragraph{Algoritmo.}
+\begin{itemize}[leftmargin=2em]
+  \item Genera $\sigma^{2(i)}$ usando $p(\sigma^2\mid Y_1,\dots,Y_n)$.
+  \item Genera $\mu^{(i)}$ usando $p(\mu\mid\sigma^{2(i)},Y_1,\dots,Y_n)$.
+\end{itemize}
+La conjunta a posteriori $(\mu^{(1)},\sigma^{2(1)}),\dots,(\mu^{(S)},\sigma^{2(S)})$ es una muestra aleatoria de $p(\mu,\sigma^2\mid Y)$; la marginal $(\mu^{(1)},\dots,\mu^{(S)})$ es una muestra de $p(\mu\mid Y)$.
+
+\paragraph{Problema.} Ya no es posible establecer explícitamente la posterior. Sabemos que
+\[
+p(\mu,\sigma^2\mid Y_1,\dots,Y_n)=\frac{p(Y_1,\dots,Y_n\mid\mu,\sigma^2)\,p(\mu,\sigma^2)}{p(Y_1,\dots,Y_n)}.
+\]
+Podríamos aproximar de manera discreta $p(Y_1,\dots,Y_n)$. Sea $\{\mu_1,\dots,\mu_s\}\in R_\mu$ y $\{\sigma_1^2,\dots,\sigma_s^2\}\in R_{\sigma^2}$; entonces
+\[
+p(\mu_i,\sigma_i^2\mid Y_1,\dots,Y_n)=\frac{p(Y\mid\sigma_j^2,\mu_i)\,p(\mu_i,\sigma_i^2)}{\sum_{i=1}^s\sum_{j=1}^T p(\mu_i,\sigma_j^2,Y_1,\dots,Y_n)}
+\]
+aproxima la posterior, pero cae en la \textbf{maldición de la dimensionalidad}.
+
+\subsection{Solución vía condicionales completas}
+\paragraph{$p(\sigma^2\mid\mu,Y)$.}
+\begin{align*}
+p(\sigma^2\mid\mu,Y)&\propto p(Y\mid\sigma^2,\mu)\,p(\mu\mid\sigma^2)\,p(\sigma^2)\\
+&\propto\sigma^{-n/2}\exp\!\left(-\sigma^{-2}\sum_{i=1}^n(Y_i-\mu)^2/2\right)\times(\sigma^2)^{-\alpha-1}\exp(-\beta\sigma^{-2})\\
+&=(\sigma^{-2})^{n/2+\alpha+1}\exp\!\left(-\sigma^{-2}\Big(\sum_{i=1}^n(Y_i-\mu)^2/2+\beta\Big)\right),
+\end{align*}
+(el término $p(\mu\mid\sigma^2)$ se ignora por no depender de $\sigma^2$ una vez fijado $\mu$). Entonces
+\[
+\sigma^{-2}\mid\mu,Y\sim\Ga\!\left(0.5n+\alpha,\ 0.5\sum_{i=1}^n(Y_i-\mu)^2+\beta\right).
+\]
+Análogamente se sabe $p(\mu\mid\sigma^2,Y)$.
+
+\paragraph{Esquema secuencial (Markov).} Supuesto: se tiene $\sigma^{2(0)}$ generado de $p(\sigma^2\mid Y)$.
+\begin{enumerate}[leftmargin=2em]
+  \item Generar $\mu^{(1)}$ usando $p(\mu\mid\sigma^{2(0)},\bar Y)$.
+  \item Generar $\sigma^{2(1)}$ usando $p(\sigma^2\mid\mu^{(1)},\bar Y)$.
+\end{enumerate}
+Repitiendo se genera la secuencia dependiente $\sigma^{2(0)},\mu^{(0)},\sigma^{2(1)},\mu^{(1)},\dots$ Esta secuencia \emph{no} es una muestra de Monte Carlo.
+
+\subsection{Gibbs Sampling general}
+Sea $\phi=(\phi_1,\dots,\phi_p)$. Insumos: prior $\phi\sim p(\phi)$ y punto de inicio $\phi^{(0)}=(\phi_1^{(0)},\dots,\phi_p^{(0)})$. Se genera $\phi^{(i)}$ vía
+\begin{align*}
+\phi_1^{(i)}&\sim p\big(\phi_1\mid\phi_2^{(i-1)},\dots,\phi_p^{(i-1)},Y\big),\\
+\phi_2^{(i)}&\sim p\big(\phi_2\mid\phi_1^{(i)},\phi_3^{(i-1)},\dots,\phi_p^{(i-1)},Y\big),\\
+\phi_3^{(i)}&\sim p\big(\phi_3\mid\phi_1^{(i)},\phi_2^{(i)},\phi_4^{(i-1)},\dots,\phi_p^{(i-1)},Y\big),\\
+&\ \ \vdots\\
+\phi_p^{(i)}&\sim p\big(\phi_p\mid\phi_1^{(i)},\phi_2^{(i)},\dots,\phi_{p-1}^{(i)},Y\big).
+\end{align*}
+En general se deben conocer todas las distribuciones condicionales. Se genera una secuencia de vectores dependientes $\phi^{(1)},\dots,\phi^{(S)}$.
+
+\paragraph{Propiedad de Markov.} $\phi^{(i)}$ depende de $\phi^{(0)},\dots,\phi^{(i-1)}$ solo a través de $\phi^{(i-1)}$: el futuro depende solamente del pasado. Esto es una \textbf{cadena de Markov}. Bajo ciertas condiciones,
+\[
+P\big(\phi^{(S)}\in A\mid Y\big)\xrightarrow{S\to\infty}\int_A p(\phi\mid Y)\,\dpar\phi,
+\]
+es decir, la distribución de $\phi^{(S)}$ converge a la posterior. Además el promedio de la cadena converge al valor esperado a posteriori:
+\[
+\frac{1}{S}\sum_{s=1}^S g(\phi^{(s)})\xrightarrow{S\to\infty}\E[g(\phi)\mid Y].
+\]
+
+\subsection{Los dos problemas del MCMC}
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Estacionaridad:} la cadena necesita olvidar su punto de inicio y llegar a una región representativa de la posterior. Se soluciona empezando en una región de alta probabilidad, verificando que dos submuestras de la cadena tengan la misma distribución, o usando muchas iteraciones y descartando las primeras (\emph{burn-in}).
+  \item \textbf{Mixing (velocidad de mezcla):} incluso cuando la cadena ya convergió, puede moverse muy lento entre distintas regiones de alta probabilidad. Esto genera alta correlación y reduce la eficiencia de la estimación.
+\end{itemize}
+
+\subsection{Varianza del estimador Monte Carlo}
+Con muestra independiente $\phi^{(1)},\dots,\phi^{(S)}$ y $\bar\phi=\tfrac{1}{S}\sum_{s=1}^S\phi^{(s)}$:
+\[
+\Var_{\text{MC}}[\bar\phi]=\E\big[(\bar\phi-\E[\bar\phi])^2\big]=\frac{\Var(\phi)}{S},
+\qquad
+\text{IC}_{95\%}\text{ para }\E[\bar\phi]:\ \ \bar\phi\pm 1.96\sqrt{\tfrac{\Var(\phi)}{S}}.
+\]
+
+\subsection{Varianza MCMC}
+\begin{align*}
+\Var_{\text{MCMC}}[\bar\phi]&=\E\big[(\bar\phi-\phi_0)^2\big]=\E\!\left[\Big(\tfrac{1}{S}\sum_{s=1}^S(\phi^{(s)}-\phi_0)\Big)^2\right]\\
+&=\frac{1}{S^2}\E\!\left[\sum_{s=1}^S(\phi^{(s)}-\phi_0)^2+\sum_{s\ne t}(\phi^{(s)}-\bar\phi)(\phi^{(t)}-\bar\phi)\right]\\
+&=\Var_{\text{MC}}[\bar\phi]+\frac{1}{S^2}\sum_{s\ne t}\Cov(\phi^{(s)},\phi^{(t)}),
+\end{align*}
+donde el segundo término es positivo cuando las muestras están correlacionadas. La autocorrelación empírica de la cadena es
+\[
+\operatorname{acf}_\tau(\phi)=\frac{\tfrac{1}{S-\tau}\sum_{s=1}^{S-\tau}(\phi^{(s)}-\bar\phi)(\phi^{(s+\tau)}-\bar\phi)}{\tfrac{1}{S-1}\sum_{s=1}^S(\phi^{(s)}-\bar\phi)^2}.
+\]
+
+\paragraph{Tamaño de muestra efectiva.}
+\[
+\Var_{\text{MCMC}}[\bar\phi]=\frac{\Var(\phi)}{S_{\text{eff}}},
+\]
+donde $S_{\text{eff}}$ es el número de muestras independientes que darían la misma precisión que la muestra MCMC obtenida.
+
+% ============================================================
+\section{Ejemplo: número de accidentes (punto de cambio de Poisson)}
+% ============================================================
+\textbf{Modelo:}
+\[
+X_i\sim\text{Poisson}(\mu),\ i=1,\dots,k;\qquad X_i\sim\text{Poisson}(\lambda),\ i=k+1,\dots,m.
+\]
+Parámetros $(\mu,\lambda,k)$. \textbf{Priors:} $\mu\sim\Ga(\alpha_1,\beta_1)$, $\lambda\sim\Ga(\alpha_2,\beta_2)$, $k\sim\text{Uniforme}\{1,2,\dots,m\}$.
+
+\paragraph{Verosimilitud.}
+\[
+p(\underline X\mid\mu,\lambda,k)=\prod_{i=1}^k\frac{\mu^{X_i}e^{-\mu}}{X_i!}\prod_{i=k+1}^m\frac{\lambda^{X_i}e^{-\lambda}}{X_i!}.
+\]
+
+\paragraph{Posterior.}
+\begin{align*}
+p(\mu,\lambda,k\mid\underline X)&\propto p(\underline X\mid\mu,\lambda,k)\,p(\mu)\,p(\lambda)\,\underbrace{p(k)}_{1/m}\\
+&\propto\mu^{\sum_{i=1}^k X_i}e^{-\mu k}\lambda^{\sum_{i=k+1}^m X_i}e^{-\lambda(m-k)}\times\mu^{\alpha_1-1}e^{-\beta_1\mu}\lambda^{\alpha_2-1}e^{-\beta_2\lambda}\tfrac{1}{m}\\
+&=\mu^{\alpha_1+\sum_{i=1}^k X_i-1}e^{-\mu(k+\beta_1)}\ \lambda^{\alpha_2+\sum_{i=k+1}^m X_i-1}e^{-\lambda(m-k+\beta_2)}.
+\end{align*}
+
+\paragraph{Condicionales de $\mu$ y $\lambda$.}
+\[
+\mu\mid\underline X,\lambda,k\sim\Ga\!\left(\alpha_1+\sum_{i=1}^k X_i,\ k+\beta_1\right),\qquad
+\lambda\mid\underline X,\mu,k\sim\Ga\!\left(\alpha_2+\sum_{i=k+1}^m X_i,\ (m-k)+\beta_2\right).
+\]
+
+\paragraph{Condicional de $k$.} Fijando $\mu$ y $\lambda$, los términos que dependen de $k$ son
+\[
+p(k\mid\underline X,\mu,\lambda)\propto\mu^{\sum_{i=1}^k X_i}\,\lambda^{\sum_{i=k+1}^m X_i}\,e^{-k(\mu-\lambda)}=\mathcal{L}(\underline X,\lambda,\mu,k).
+\]
+Como $k$ es discreto (el punto de cambio es un mes en particular) y se distribuye uniformemente,
+\[
+p(k\mid\mu,\lambda,\underline X)=\frac{\mathcal{L}(\underline X,\lambda,\mu,k)}{\sum_{i=1}^m\mathcal{L}(\underline X,\lambda,\mu,i)},\ i=1,\dots,m,
+\]
+(numéricamente se aplican logaritmos y se resta el máximo).
+
+% ============================================================
+\section{Regresión lineal (parametrización con precisión)}
+% ============================================================
+\textbf{Modelo:} $Y_i=\beta_0+\beta_1 X_i+\varepsilon_i$, $\varepsilon_i\sim\N(0,1/\tau)$.\\
+\textbf{Priors:} $\beta_0\sim\N(0,1/\tau_0)$, $\beta_1\sim\N(0,1/\tau_1)$, $\tau\sim\Ga(\alpha,\beta)$.
+
+\paragraph{Verosimilitud.}
+\[
+p(\underline Y\mid\beta_0,\beta_1,\tau)=\left(\frac{1}{\sqrt{2\pi}}\right)^n\tau^{n/2}\exp\!\left(-\frac{\tau}{2}\sum_{i=1}^n(Y_i-\beta_0-\beta_1 X_i)^2\right).
+\]
+
+\paragraph{Posterior.}
+\begin{align*}
+p(\beta_0,\beta_1,\tau\mid\underline Y,\underline X)
+&=p(\underline Y\mid\beta_0,\beta_1,\tau)\,p(\beta_0)\,p(\beta_1)\,p(\tau)\\
+&=\tau^{n/2}\exp\!\left(-\tfrac{\tau}{2}\sum_{i=1}^n(Y_i-\beta_0-\beta_1 X_i)^2\right)e^{-0.5\tau_0\beta_0^2}e^{-0.5\tau_1\beta_1^2}\tau^{\alpha-1}e^{-\beta\tau}.
+\end{align*}
+
+\paragraph{Condicional de $\tau$.}
+\[
+p(\tau\mid\beta_0,\beta_1)\propto\tau^{0.5n+\alpha-1}\exp\!\left(-\tau\Big[0.5\sum_{i=1}^n(Y_i-\beta_0-\beta_1 X_i)^2+\beta\Big]\right),
+\]
+entonces
+\[
+\tau\mid\beta_0,\beta_1\sim\Ga\!\left(0.5n+\alpha,\ 0.5\sum_{i=1}^n(Y_i-\beta_0-\beta_1 X_i)^2+\beta\right).
+\]
+
+\paragraph{Condicional de $\beta_0$.}
+\[
+p(\beta_0\mid\tau,\beta_1)\propto\exp\!\left(-0.5\tau\sum_{i=1}^n\big[(Y_i-\beta_1 X_i)-\beta_0\big]^2-0.5\tau_0\beta_0^2\right).
+\]
+Con $r_i=Y_i-\beta_1 X_i$ y $\bar r=\bar Y-\beta_1\bar X$:
+\[
+\sum(r_i-\beta_0)^2=\sum r_i^2-2\beta_0\sum r_i+n\beta_0^2,
+\]
+(el primer término se omite). El exponente queda $-\tfrac{\tau}{2}[-2\beta_0 n\bar r+n\beta_0^2]-0.5\tau_0\beta_0^2=-0.5[(\tau n+\tau_0)\beta_0^2-2\tau n\bar r\beta_0]$. Con $A=\tau n+\tau_0$ y $B=\tau n\bar r$, completando cuadrados,
+\[
+A\beta_0^2-2B\beta_0=A\Big(\beta_0-\tfrac{B}{A}\Big)^2-\tfrac{B^2}{A}\ \Rightarrow\ -\tfrac{A}{2}\Big(\beta_0-\tfrac{B}{A}\Big)^2=-\frac{1}{2\,(1/A)}\Big(\beta_0-\tfrac{B}{A}\Big)^2.
+\]
+Identificando la normal,
+\[
+\beta_0\mid\beta_1,\tau\sim\N\!\left(\frac{\tau n(\bar Y-\beta_1\bar X)}{\tau n+\tau_0},\ \frac{1}{\tau n+\tau_0}\right).
+\]
+
+\paragraph{Condicional de $\beta_1$.}
+\[
+p(\beta_1\mid\tau,\beta_0)\propto\exp\!\left(-\tfrac{\tau}{2}\sum_{i=1}^n(Y_i-\beta_0-\beta_1 X_i)^2\right)\exp\!\left(-\tfrac{\tau_1}{2}\beta_1^2\right).
+\]
+Con $u_i=Y_i-\beta_0$: $\sum(u_i-\beta_1 X_i)^2=\sum u_i^2-2\beta_1\sum u_i X_i+\beta_1^2\sum X_i^2$. Usando $\sum X_i^2=n\bar X^2$ y $\sum u_i X_i=n\overline{XY}-n\bar X\beta_0$:
+\[
+-\tfrac12\big[(\tau n\bar X^2+\tau_1)\beta_1^2-2\tau(n\overline{XY}-n\bar X\beta_0)\beta_1\big].
+\]
+Con $A=\tau n\bar X^2+\tau_1$ y $B=\tau(n\overline{XY}-n\bar X\beta_0)$,
+\[
+\beta_1\mid\beta_0,\tau\sim\N\!\left(\frac{\tau(n\overline{XY}-n\bar X\beta_0)}{\tau n\bar X^2+\tau_1},\ \frac{1}{\tau n\bar X^2+\tau_1}\right).
+\]
+
+% ============================================================
+\section{Modelo Beta-Binomial}
+% ============================================================
+\textbf{Modelo:} $X\mid\theta\sim\text{Binomial}(n,\theta)$, $\theta\sim\text{Beta}(\alpha,\beta)$. Modelo conjunto
+\[
+f(X,\theta)=\binom{n}{X}\theta^{X}(1-\theta)^{n-X}\cdot\frac{\theta^{\alpha-1}(1-\theta)^{\beta-1}}{B(\alpha,\beta)}.
+\]
+
+% ============================================================
+\section{Mezcla de normales con variable latente}
+% ============================================================
+\textbf{Modelo para $X$:}
+\[
+f(X\mid\pi,\mu_0,\mu_1)=(1-\pi)\,\N(X\mid\mu_0,\tau^{-1})+\pi\,\N(X\mid\mu_1,\tau^{-1}),
+\]
+donde $\tau$ es la precisión (conocida). Hay 3 parámetros desconocidos $(\pi,\mu_0,\mu_1)$ con priors
+\[
+\pi\sim\text{Beta}(\alpha,\beta)\ (0\le\pi\le1),\qquad \mu_0\sim\N(\eta_0,\tau_0),\qquad \mu_1\sim\N(\eta_1,\tau_1).
+\]
+¿Cuál es la posterior $p(\pi,\mu_0,\mu_1\mid X)$? La verosimilitud tiene una suma dentro del producto, lo que dificulta calcular la posterior. \textbf{Acudimos a variables auxiliares (latentes).}
+
+\paragraph{Variable latente.}
+\[
+Z_i=\begin{cases}0 & \text{si }X_i\text{ viene del grupo 0 (media }\mu_0)\\ 1 & \text{si }X_i\text{ viene del grupo 1 (media }\mu_1)\end{cases}
+\qquad Z_i\mid\pi\sim\text{Bernoulli}(\pi).
+\]
+Entonces
+\begin{align*}
+p(X_i\mid\mu,\pi)&=p(X_i\mid Z_i=0,\mu,\pi)P(Z_i=0\mid\mu,\pi)+p(X_i\mid Z_i=1,\mu,\pi)P(Z_i=1\mid\mu,\pi)\\
+&=(1-\pi)\N(X_i\mid\mu_0,\tau^{-1})+\pi\N(X_i\mid\mu_1,\tau^{-1})=f(X\mid\mu,\pi),
+\end{align*}
+con $\mu=(\mu_0,\mu_1)$, y $X_i\mid Z_i=0\sim\N(\mu_0,\tau^{-1})$, $X_i\mid Z_i=1\sim\N(\mu_1,\tau^{-1})$. Ahora tenemos un producto de verosimilitudes:
+\[
+p(X\mid Z,\mu,\pi)=\prod_{Z_i=0}\N(X_i\mid\mu_0,\tau^{-1})\prod_{Z_i=1}\N(X_i\mid\mu_1,\tau^{-1}).
+\]
+
+\paragraph{Posterior.}
+\[
+p(\mu,\pi,\underline Z\mid X)\propto\prod_{i=1}^n p(X_i\mid Z_i,\mu,\pi)\,p(Z_i\mid\pi,\mu)\,p(\pi,\mu),
+\]
+usando la regla de la cadena $p(A,B,C)=p(A\mid B,C)p(B\mid C)p(C)$ con $A=X$, $B=Z$, $C=(\mu,\pi)$, y $p(\mu,\pi)=p(\mu_1)p(\mu_0)p(\pi)$.
+
+\paragraph{Condicional de $\mu_0$ (análogo $\mu_1$).}
+\[
+p(\mu_0\mid\pi,\underline Z,X)\propto\prod_{Z_i=0}p(X_i\mid\mu_0)\,p(\mu_0)\propto\exp\!\left(-\tfrac{\tau}{2}\sum_{Z_i=0}(X_i-\mu_0)^2\right)\exp\!\left(-\tfrac{\tau_0}{2}(\mu_0-\eta_0)^2\right).
+\]
+Con $(X_i-\mu_0)^2=X_i^2-2X_i\mu_0+\mu_0^2$, sumando sobre $Z_i=0$ ($n_0$ observaciones, media $\bar X_0$):
+\[
+\sum_{Z_i=0}(X_i-\mu_0)^2\propto-2\mu_0 n_0\bar X_0+n_0\mu_0^2.
+\]
+De la prior $(\mu_0-\eta_0)^2\propto\mu_0^2-2\mu_0\eta_0$. Metiendo todo dentro,
+\[
+p(\mu_0\mid\cdots)\propto\exp\!\left(-\tfrac12\big[(n_0\tau+\tau_0)\mu_0^2-2(n_0\tau\bar X_0+\tau_0\eta_0)\mu_0\big]\right).
+\]
+Con $A=n_0\tau+\tau_0$ y $B=n_0\tau\bar X_0+\tau_0\eta_0$, completando cuadrados,
+\[
+\mu_0\mid\cdots\sim\N\!\left(\frac{n_0\tau}{n_0\tau+\tau_0}\,\bar X_0+\frac{\tau_0}{n_0\tau+\tau_0}\,\eta_0,\ (n_0\tau+\tau_0)^{-1}\right).
+\]
+
+\paragraph{Condicional de $\mu_1$ (por el capítulo 2).}
+\[
+\mu_1\mid\pi,\underline Z,\underline X\sim\N\!\left(\frac{n_1\tau}{n_1\tau+\tau_1}\bar X_1+\frac{\tau_1}{n_1\tau+\tau_1}\eta_1,\ (n_1\tau+\tau_1)^{-1}\right),
+\quad n_1=\sum_{i=1}^n Z_i,\ \bar X_1=\frac{\sum_i X_i Z_i}{\sum_i Z_i}.
+\]
+
+\paragraph{Condicional de $\pi$.}
+\[
+p(\pi\mid\underline Z,\mu,\underline X)\propto\pi^{n_1+\alpha-1}(1-\pi)^{n_0+\beta-1}\ \Rightarrow\ \pi\mid\underline Z,\mu,\underline X\sim\text{Beta}(n_1+\alpha,\ n_0+\beta).
+\]
+
+\paragraph{Condicional de $Z_i$.}
+\[
+P(Z_i=1\mid\mu,\pi)=\frac{p(x_i\mid z_i=1,\mu,\pi)P(Z_i=1\mid\mu,\pi)}{Pa},
+\]
+\begin{align*}
+Pa&=p(x_i\mid z_i=0,\mu,\pi)P(Z_i=0\mid\mu,\pi)+p(x_i\mid z_i=1,\mu,\pi)P(Z_i=1\mid\mu,\pi)\\
+&=(1-\pi)\N(\mu_0,\sqrt{1/\tau})+\pi\N(\mu_1,\sqrt{1/\tau}).
+\end{align*}
+
+% ============================================================
+\section{Distribución Normal multivariada}
+% ============================================================
+$X\sim\N_K(\mu,\Sigma)$ tiene densidad
+\[
+f_X(x)=\frac{1}{|\Sigma|^{1/2}(2\pi)^{K/2}}\exp\!\left(-\tfrac12(x-\mu)^{\top}\Sigma^{-1}(x-\mu)\right),
+\]
+con $\E(X)=\mu=(\mu_1,\dots,\mu_K)'$ y $\Sigma$ la matriz de covarianzas ($\Var(X_i)=\sigma_i^2$, $\Cov(X_i,X_j)=\sigma_{ij}$). Marginal: $X_i\sim\N(\mu_i,\sigma_i^2)$.
+\begin{align*}
+f_X(x)&\propto\exp\!\left(-\tfrac12(x-\mu)^{\top}\Sigma^{-1}(x-\mu)\right)
+\propto\exp\!\left(-\tfrac12\big[x^{\top}\Sigma^{-1}x-2x^{\top}\Sigma^{-1}\mu+\mu^{\top}\Sigma^{-1}\mu\big]\right)\\
+&\propto\exp\!\left(-\tfrac12\big[x^{\top}\underbrace{\Sigma^{-1}}_{A}x-2x^{\top}\underbrace{\Sigma^{-1}\mu}_{a}\big]\right).
+\end{align*}
+
+\begin{prop}
+Si la densidad de un vector $X$ es $f(x)\propto\exp\!\big(-\tfrac12[x^{\top}Ax-2x^{\top}a]\big)$, con $A$ matriz $K\times K$ positiva definida y $a$ vector $K\times1$, entonces
+\[
+X\sim\N(A^{-1}a,\ A^{-1}).
+\]
+\end{prop}
+Esto se logra expandiendo el producto de la normal multivariada:
+\begin{align*}
+\tfrac12(y-\mu)^{\top}\Sigma^{-1}(y-\mu)&=-\tfrac12\big(y^{\top}\Sigma^{-1}y-y^{\top}\Sigma^{-1}\mu-\mu^{\top}\Sigma^{-1}y+\mu^{\top}\Sigma^{-1}\mu\big),
+\end{align*}
+y como $\Sigma^{-1}$ es simétrica, $y^{\top}\Sigma^{-1}\mu=\mu^{\top}\Sigma^{-1}y$, de modo que
+$=-\tfrac12(y^{\top}\Sigma^{-1}y-2y^{\top}\Sigma^{-1}\mu)+\text{cte}$. Comparando: $A=\Sigma^{-1}\Rightarrow\Sigma=A^{-1}$ y $a=\Sigma^{-1}\mu\Rightarrow A^{-1}a=\mu$.
+
+% ============================================================
+\section{Modelo de regresión lineal (revisado)}
+% ============================================================
+\subsection{Distribución Gamma e Inverse-Gamma}
+$Y\sim\Ga(a,b)$: $f(Y)=\dfrac{b^a}{\Gamma(a)}Y^{a-1}e^{-bY}$, $Y>0$, $a,b>0$, con $\E[Y]=a/b$, $\Var(Y)=a/b^2$.\\
+$Y\sim\IG(a,b)$: $f_Y(Y)=\dfrac{b^a}{\Gamma(a)}\left(\dfrac{1}{Y}\right)^{a+1}e^{-b/Y}$, $Y>0$. Propiedad: $Y\sim\Ga(a,b)\iff 1/Y\sim\IG(a,b)$. Es la prior conjugada para la varianza en modelos normales.
+
+\subsection{Planteamiento}
+$y_i=X_i^{\top}\beta+\varepsilon_i$, $\varepsilon_i\overset{ind}{\sim}\N(0,\sigma^2)$, $i=1,\dots,n$, es decir $\by=\bX\beta+\beps$ con $\beps\sim\N(0,\sigma^2\bI)$. Por lo tanto $\by\mid\beta,\sigma^2\sim\N(\bX\beta,\sigma^2\bI)$ y la máxima verosimilitud es
+\[
+p(\by\mid\beta,\sigma^2)=\left(\frac{1}{2\pi}\right)^{n/2}\left(\frac{1}{\sigma^2}\right)^{n/2}\exp\!\left(-\frac{1}{2\sigma^2}(\by-\bX\beta)^{\top}(\by-\bX\beta)\right).
+\]
+
+\subsection{Distribuciones a priori}
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{No informativa (impropia):} $p(\beta,\sigma^2)\propto\dfrac{1}{\sigma^2}$ (no integra a $1$, pero es válida para la posterior).
+  \item \textbf{Informativa:} $p(\beta,\sigma^2)=p(\beta)p(\sigma^2)$ con $\beta\sim\N(\beta_0,\Sigma_0)$ y $\sigma^2\sim\IG(a_0,b_0)$.
+\end{itemize}
+
+\subsection{Posterior con prior no informativa}
+\[
+p(\beta,\sigma^2\mid\by)\propto p(\by\mid\beta,\sigma^2)\,p(\beta,\sigma^2)
+\propto\left(\frac{1}{\sigma^2}\right)^{\frac{n}{2}+1}\exp\!\left(-\frac{1}{2\sigma^2}(\by-\bX\beta)^{\top}(\by-\bX\beta)\right).
+\]
+
+\subsection{Condicional completa de $\beta$}
+\begin{align*}
+p(\beta\mid\sigma^2,\by)&\propto\exp\!\left(-\frac{1}{2\sigma^2}\big[\underbrace{\by^{\top}\by}_{\text{sale}}-2\beta^{\top}\bX^{\top}\by+\beta^{\top}\bX^{\top}\bX\beta\big]\right)\\
+&\propto\exp\!\left(-\tfrac12\Big[\beta^{\top}\underbrace{\tfrac{\bX^{\top}\bX}{\sigma^2}}_{A}\beta-2\beta^{\top}\underbrace{\tfrac{\bX^{\top}\by}{\sigma^2}}_{a}\Big]\right).
+\end{align*}
+Comparando con el kernel de una normal multivariada $\propto\exp\!\big(-\tfrac12(\beta^{\top}\Sigma^{-1}\beta-2\beta^{\top}\Sigma^{-1}\mu)\big)$:
+\[
+\Sigma^{-1}=\frac{\bX^{\top}\bX}{\sigma^2}\Rightarrow\Sigma=\sigma^2(\bX^{\top}\bX)^{-1},\qquad
+\Sigma^{-1}\mu=\frac{\bX^{\top}\by}{\sigma^2}\Rightarrow\mu=(\bX^{\top}\bX)^{-1}\bX^{\top}\by=\hat\beta_{\text{OLS}},
+\]
+de donde
+\[
+\beta\mid\sigma^2,\by\sim\N\!\left((\bX^{\top}\bX)^{-1}\bX^{\top}\by,\ \sigma^2(\bX^{\top}\bX)^{-1}\right).
+\]
+
+\subsection{Condicional completa de $\sigma^2$}
+Fijando $\beta$ y con $\text{SSE}=(\by-\bX\beta)^{\top}(\by-\bX\beta)$:
+\[
+p(\sigma^2\mid\beta,\by)\propto\left(\frac{1}{\sigma^2}\right)^{n/2+1}\exp\!\left(-\frac{\text{SSE}}{2\sigma^2}\right).
+\]
+Comparando con el kernel de $\IG(a,b)$, $\left(\tfrac{1}{\sigma^2}\right)^{a+1}\exp(-b/\sigma^2)$: $a+1=\tfrac{n}{2}+1\Rightarrow a=\tfrac{n}{2}$ y $b=\tfrac{\text{SSE}}{2}$. Por lo tanto
+\[
+\sigma^2\mid\beta,\by\sim\IG\!\left(\frac{n}{2},\ \frac{\text{SSE}}{2}\right),\qquad
+\text{SSE}=(\by-\bX\beta)^{\top}(\by-\bX\beta).
+\]
+
+\subsection{Gibbs Sampling}
+\begin{enumerate}[leftmargin=2em]
+  \item Simular $\beta^{t+1}\sim\N\big((\bX^{\top}\bX)^{-1}\bX^{\top}\by,\ \sigma_t^2(\bX^{\top}\bX)^{-1}\big)$.
+  \item Simular $\sigma^2_{t+1}\sim\IG\big(\tfrac{n}{2},\ \tfrac12(\by-\bX\beta^{t})^{\top}(\by-\bX\beta^{t})\big)$.
+\end{enumerate}
+
+\subsection{Estimación de la media de $Y$ cuando $X=10$}
+Sea $\mu_{10}=\E(Y\mid X=10)=\beta_0+\beta_1\cdot 10$. Necesitamos $p(\mu_{10}\mid\by)$, que se simula con Monte Carlo:
+\[
+\mu_{10}^{t}=\beta_0^{t}+\beta_1^{t}\times 10,\ t=1,\dots,10000\ \ (\text{muestras de }p(\mu_{10}\mid\by)).
+\]
+
+\subsection{Distribución predictiva a posteriori}
+Sea $y^p$ el valor predictivo:
+\[
+p(y^p\mid\by)=\int p(y^p,\theta\mid\by)\,\dpar\theta=\int p(y^p\mid\theta,\by)\,p(\theta\mid\by)\,\dpar\theta.
+\]
+Si $y^p$ e $\by$ son independientes condicional a $\theta$, se reduce a
+\[
+p(y^p\mid\by)\propto\int p(y^p\mid\theta)\,p(\theta\mid\by)\,\dpar\theta.
+\]
+\textbf{Monte Carlo:} $\theta^t\sim p(\theta\mid\by)$ (Gibbs); $y_p^t\sim p(y^p\mid\theta=\theta^t)$.\\
+\textbf{Ejemplo ($X=10$):} $Y_{10}\mid\beta,\sigma^2\sim\N(\beta_0+\beta_1\times 10,\sigma^2)$.
+\begin{enumerate}[leftmargin=2em]
+  \item $\beta^t,\sigma_t^2\sim p(\beta,\sigma^2\mid\by)$.
+  \item $Y_{10}^t\sim\N(\beta_0^t+\beta_1^t\times 10,\ \sigma_t^2)$.
+\end{enumerate}
+
+% ============================================================
+\section{Criterios para comparación de modelos: DIC}
+% ============================================================
+\textbf{DIC (Deviance Information Criterion).} Deviance: $D(\theta)=-2\log p(\by\mid\theta)$. Con $\hat\theta=\E(\theta\mid\by)$, $\hat D=D(\hat\theta)$, $\bar D=\E(D(\theta))$. Penalidad (número efectivo de parámetros):
+\[
+p_D=\bar D-\hat D,\qquad
+\text{DIC}=\underbrace{\hat D}_{\text{ajuste}}+\underbrace{2p_D}_{\text{penaliza por complejidad}}.
+\]
+Con $\theta=(\beta,\sigma^2)$ y $y_i\overset{i.i.d.}{\sim}\N(X_i^{\top}\beta,\sigma^2)$:
+\[
+D(\theta)=-2\log p(\by\mid\beta,\sigma^2)=-2\log\prod_{i=1}^n\phi(y_i\mid X_i^{\top}\beta,\sigma^2)=-2\sum_{i=1}^n\log\phi(y_i\mid X_i^{\top}\beta,\sigma^2).
+\]
+
+\paragraph{Propiedad ($t$-Student).} Si $Z\sim\N(0,1)$ y $W\sim\Ga(\tfrac{\nu}{2},\tfrac{\nu}{2})$ independientes, entonces $T=\dfrac{Z}{\sqrt{W}}\sim t(0,1,\nu)$.
+
+\begin{center}
+\begin{tabular}{lc}
+\hline
+Modelo & DIC \\ \hline
+Normal & $122.85$ \\
+$t$-Student & $114.01$ \\ \hline
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section{Modelo de regresión con errores $t$-Student}
+% ============================================================
+\subsection{Distribución $t$-Student}
+Existe porque la normal asume que todos los datos son bien portados (sin valores extremos). Con outliers, la normal distorsiona la estimación; la $t$-Student tiene colas más pesadas. $Y\sim t(\mu,\sigma,\nu)$:
+\begin{itemize}[leftmargin=2em]
+  \item $\mu$: centro de la distribución.
+  \item $\sigma$: escala.
+  \item $\nu$: grados de libertad que controlan el grosor de las colas.
+\end{itemize}
+Cuando $\nu\to\infty$ la $t$-Student converge a una Normal; si $\nu$ es chico tiene colas pesadas.
+\[
+f_Y(y)=\frac{\Gamma((\nu+1)/2)}{\Gamma(\nu/2)\sqrt{\nu\pi}}\frac{1}{\sigma}\left(1+\frac{1}{\nu}\Big(\frac{y-\mu}{\sigma}\Big)^2\right)^{-\frac{\nu+1}{2}},\ y\in\R,\ \mu\in\R,\ \sigma>0,\ \nu>0,
+\]
+\[
+\E[Y]=\mu\ (\nu>1),\qquad \Var[Y]=\frac{\nu}{\nu-2}\sigma^2\ (\nu>2).
+\]
+
+\paragraph{Estandarización.} Si $Z\sim t(0,1,\nu)$, entonces $Y=\mu+\sigma Z\sim t(\mu,\sigma,\nu)$, y $f_Y(y)=\tfrac{1}{\sigma}f_Z\big(\tfrac{y-\mu}{\sigma},\nu\big)$.
+
+\paragraph{Representación estocástica.} Sean $Z\sim\N(0,1)$ y $W\sim\Ga(\nu/2,\nu/2)$ independientes; entonces $T=\dfrac{Z}{\sqrt{W}}\sim t(0,1,\nu)$.
+
+\subsection{Modelo de regresión con errores $t$-Student}
+\[
+y_i=X_i^{\top}\beta+t_i,\qquad t_i\overset{ind}{\sim}t(0,1,\sigma^2).
+\]
+Usando la representación estocástica $t_i=\dfrac{\varepsilon_i}{\sqrt{w_i}}$ con $\varepsilon_i\sim\N(0,\sigma^2)$ y $w_i\sim\Ga(\nu/2,\nu/2)$ independientes, considerando $w_i$ como variable latente:
+\[
+y_i\mid w_i,\beta,\sigma^2\sim\N\!\left(X_i^{\top}\beta,\ \frac{\sigma^2}{w_i}\right),\qquad w_i\mid\beta,\sigma^2\sim\Ga(\nu/2,\nu/2).
+\]
+Para $i=1,\dots,n$, la verosimilitud de $\by=(y_1,\dots,y_n)$ y $\bW=(w_1,\dots,w_n)$ (regla del producto) es
+\[
+p(\by,\bW\mid\beta,\sigma^2)=\prod_{i=1}^n p(y_i\mid w_i,\beta,\sigma^2)\,p(w_i\mid\beta,\sigma^2)=\prod_{i=1}^n p(y_i\mid w_i,\beta,\sigma^2)\prod_{i=1}^n p(w_i\mid\beta,\sigma^2).
+\]
+
+\subsection{Priors y posterior}
+Con $\nu$ fijo pequeño y prior no informativa $p(\beta,\sigma^2)\propto\dfrac{1}{\sigma^2}$:
+\[
+p(\beta,\sigma^2\mid\by)\propto\prod_{i=1}^n p(y_i\mid w_i,\beta,\sigma^2)\prod_{i=1}^n p(w_i\mid\beta,\sigma^2)\times\frac{1}{\sigma^2},
+\]
+donde
+\[
+p(y_i\mid w_i,\beta,\sigma^2)=\frac{w_i^{1/2}}{\sqrt{2\pi\sigma^2}}\exp\!\left(-\frac{w_i}{2\sigma^2}(y_i-X_i^{\top}\beta)^2\right),\qquad
+p(w_i)=\frac{(\nu/2)^{\nu/2}}{\Gamma(\nu/2)}w_i^{\nu/2-1}e^{-(\nu/2)w_i}.
+\]
+
+\subsection{Condicionales completas (Gibbs)}
+\paragraph{$\beta$.}
+\[
+p(\beta\mid\sigma^2,\omega,\by)\propto\prod_{i=1}^n\frac{w_i^{1/2}}{\sigma}\exp\!\left(-\frac{w_i}{2\sigma^2}(y_i-X_i^{\top}\beta)^2\right)\propto\exp\!\left(-\frac{1}{2\sigma^2}\sum_{i=1}^n w_i(y_i-X_i^{\top}\beta)^2\right).
+\]
+Con $\sum w_i(y_i-X_i^{\top}\beta)^2=(\by-\bX\beta)^{\top}\bW(\by-\bX\beta)$, expandiendo,
+\[
+\propto\exp\!\left(-\tfrac{1}{2\sigma^2}\big[\beta^{\top}\bX^{\top}\bW\bX\beta-2\beta^{\top}\bX^{\top}\bW\by\big]\right).
+\]
+Identificando: $\Sigma^{-1}=\dfrac{\bX^{\top}\bW\bX}{\sigma^2}\Rightarrow\Sigma=\sigma^2(\bX^{\top}\bW\bX)^{-1}$ y $\mu=(\bX^{\top}\bW\bX)^{-1}\bX^{\top}\bW\by$, entonces
+\[
+\boxed{\ \beta\mid\sigma^2,\omega,\by\sim\N\!\left((\bX^{\top}\bW\bX)^{-1}\bX^{\top}\bW\by,\ \sigma^2(\bX^{\top}\bW\bX)^{-1}\right)\ }
+\]
+
+\paragraph{$\sigma^2$.} Con $\text{SSE}_\omega=\sum_{i=1}^n w_i(y_i-X_i^{\top}\beta)^2$:
+\[
+p(\sigma^2\mid\beta,\omega,\by)\propto\left(\frac{1}{\sigma^2}\right)^{n/2+1}\exp\!\left(-\frac{\text{SSE}_\omega}{2\sigma^2}\right)
+\ \Rightarrow\ \sigma^2\mid\beta,\omega,\by\sim\IG\!\left(\frac{n}{2},\ \frac{1}{2}\sum_{i=1}^n w_i(y_i-X_i^{\top}\beta)^2\right).
+\]
+
+\paragraph{$w_i$ (cada $i$ por separado).}
+\begin{align*}
+p(w_i\mid\beta,\sigma^2,y_i)&\propto p(y_i\mid w_i,\beta,\sigma^2)\,p(w_i)\\
+&\propto\frac{w_i^{1/2}}{\sigma}\exp\!\left(-\frac{w_i}{2\sigma^2}(y_i-X_i^{\top}\beta)^2\right)\times w_i^{\nu/2-1}\exp\!\left(-\frac{\nu}{2}w_i\right)\\
+&\propto w_i^{(\nu+1)/2-1}\exp\!\left(-w_i\left[\frac{(y_i-X_i^{\top}\beta)^2}{2\sigma^2}+\frac{\nu}{2}\right]\right),
+\end{align*}
+por lo tanto
+\[
+w_i\mid\beta,\sigma^2,y_i\sim\Ga\!\left(\frac{\nu+1}{2},\ \frac{\nu}{2}+\frac{(y_i-X_i^{\top}\beta)^2}{2\sigma^2}\right).
+\]
+
+\subsection{Algoritmo de Gibbs para el modelo $t$}
+\begin{enumerate}[leftmargin=2em]
+  \item Generar $w_i^{s+1}\sim\Ga\!\left(\tfrac{\nu+1}{2},\ \tfrac{\nu}{2}+\tfrac{(y_i-X_i^{\top}\beta^s)^2}{2\sigma_s^2}\right)$.
+  \item Generar $\beta^{s+1}\sim\N\!\left((\bX^{\top}\bW^{s+1}\bX)^{-1}\bX^{\top}\bW^{s+1}\by,\ \sigma_s^2(\bX^{\top}\bW^{s+1}\bX)^{-1}\right)$.
+  \item Generar $\sigma^2_{s+1}\sim\IG\!\left(\tfrac{n}{2},\ \tfrac12\sum_{i=1}^n w_i^{s+1}(y_i-X_i^{\top}\beta^{s+1})^2\right)$.
+\end{enumerate}
+
+% ============================================================
+\section{Algoritmo de Metropolis-Hastings}
+% ============================================================
+$\theta^t=$ valor actual de la cadena. $q(\theta\mid\theta^t)$: distribución generadora de candidatos, condicional al valor actual.
+\begin{enumerate}[leftmargin=2em]
+  \item Generar un candidato $\theta^{\text{cand}}\sim q(\theta\mid\theta^t)$.
+  \item Calcular la probabilidad de aceptación
+  \[
+  \alpha(\theta^{\text{cand}},\theta^t)=\min\left\{1,\ \frac{f(\theta^{\text{cand}})}{f(\theta^t)}\times\frac{q(\theta^t\mid\theta^{\text{cand}})}{q(\theta^{\text{cand}}\mid\theta^t)}\right\}.
+  \]
+  \item Aceptar el candidato con probabilidad $\alpha$: $\theta^{t+1}=\theta^{\text{cand}}$; rechazar con probabilidad $1-\alpha$: $\theta^{t+1}=\theta^t$.
+\end{enumerate}
+La secuencia $\theta^0,\theta^1,\theta^2,\dots$ converge a $f(\theta)$. Solo se requiere simular $q(\cdot\mid\cdot)$, que se puede escoger libremente. Aunque esté garantizada la convergencia, la elección de $q(\cdot\mid\cdot)$ es crucial para que el algoritmo sea eficiente.
+
+\subsection{Metropolis-Hastings — paseo aleatorio}
+Distribución generadora de candidatos: normal centrada en el valor actual, $\theta^{\text{cand}}\sim\N(\theta^t,\Sigma)$.
+\begin{align*}
+p(\theta^{\text{cand}}\mid\theta^t)&=\frac{1}{(2\pi)^{n/2}|\Sigma|^{1/2}}\exp\!\left(-\tfrac12(\theta^{\text{cand}}-\theta^t)^{\top}\Sigma^{-1}(\theta^{\text{cand}}-\theta^t)\right),\\
+p(\theta^t\mid\theta^{\text{cand}})&=\frac{1}{(2\pi)^{n/2}|\Sigma|^{1/2}}\exp\!\left(-\tfrac12(\theta^t-\theta^{\text{cand}})^{\top}\Sigma^{-1}(\theta^t-\theta^{\text{cand}})\right).
+\end{align*}
+Notemos que $p(\theta^{\text{cand}}\mid\theta^t)=p(\theta^t\mid\theta^{\text{cand}})$: la propuesta es \textbf{simétrica} y se cancela en $\alpha$.
+\begin{enumerate}[leftmargin=2em]
+  \item $\theta^{\text{cand}}\sim\N(\theta^t,\Sigma)$.
+  \item Generar $U\sim\text{U}(0,1)$.
+  \item Si $U<\min\left\{1,\ \dfrac{f(\theta^{\text{cand}})}{f(\theta^t)}\right\}\Rightarrow\theta^{t+1}=\theta^{\text{cand}}$; en caso contrario $\theta^{t+1}=\theta^t$.
+\end{enumerate}
+En escala logarítmica (más estable numéricamente):
+\[
+\log(U)\le\log\!\left(\frac{f(\theta^{\text{cand}})}{f(\theta^t)}\right)\le\log f(\theta^{\text{cand}})-\log f(\theta^t).
+\]
+El algoritmo funciona bien si la tasa de aceptación no es muy alta (35\% a 40\%). $\Sigma$ debe seleccionarse apropiadamente.
+
+\paragraph{Sugerencia de Gelman (1995).}
+\[
+\Sigma=c^2\bV,
+\]
+donde $\bV$ es la covarianza de la posterior y $c=\dfrac{2.4}{\sqrt{K}}$, con $K=$ número de parámetros. $\bV$ se puede aproximar con la negativa de la Hessiana de la log-posterior evaluada en el máximo posterior (matriz de información de Fisher).
+
+\subsection{Ejemplo: Regresión Probit}
+$y_i\overset{ind}{\sim}\text{Bernoulli}(\pi_i)$, $\pi_i=\Phi(X_i^{\top}\beta)$.
+\[
+p(\by\mid\beta)=\prod_{i=1}^n\pi_i^{y_i}(1-\pi_i)^{1-y_i}=\prod_{i=1}^n\Phi(X_i^{\top}\beta)^{y_i}\big[1-\Phi(X_i^{\top}\beta)\big]^{1-y_i}.
+\]
+Con $p(\beta)\propto 1$,
+\[
+p(\beta\mid\by)\propto p(\by\mid\beta)\propto\prod_{i=1}^n\Phi(X_i^{\top}\beta)^{y_i}\big[1-\Phi(X_i^{\top}\beta)\big]^{1-y_i},
+\]
+\[
+\log p(\beta\mid\by)\propto\sum_{i=1}^n y_i\log\Phi(X_i^{\top}\beta)+(1-y_i)\log\big[1-\Phi(X_i^{\top}\beta)\big].
+\]
+En R: \verb|sum(dbinom(y, 1, pnorm(X %*% beta), log = TRUE))|.
+
+% ============================================================
+\section{Regresión Probit con variables latentes (Albert y Chib)}
+% ============================================================
+\subsection{Distribución normal truncada}
+Sea $Z\sim\N(\mu,\sigma^2)\ind(a,b)$ truncada en $(a,b)$:
+\[
+f_Z(z)=\frac{\tfrac{1}{\sigma}\phi\!\big(\tfrac{z-\mu}{\sigma}\big)}{\Phi\!\big(\tfrac{b-\mu}{\sigma}\big)-\Phi\!\big(\tfrac{a-\mu}{\sigma}\big)},\quad a<z<b,
+\]
+donde el denominador es la constante normalizadora que garantiza que la densidad integre $1$; $\phi(\cdot)$ y $\Phi(\cdot)$ son la densidad y CDF normal estándar. Notemos que $f_Z(z)\propto\tfrac{1}{\sigma}\phi\!\big(\tfrac{z-\mu}{\sigma}\big)\ind(a<z<b)$.
+
+\subsection{Modelo Probit con latentes}
+$y_i\sim\text{Bernoulli}(\pi_i)$, $\pi_i=\Phi(X_i^{\top}\beta)$ (CDF de la normal estándar mapea a $(0,1)$). La verosimilitud de $\by=(y_1,\dots,y_n)^{\top}$ es
+\[
+p(\by\mid\beta)=\prod_{i=1}^n\big[\Phi(X_i^{\top}\beta)\big]^{y_i}\big[1-\Phi(X_i^{\top}\beta)\big]^{1-y_i}.
+\]
+Con prior no informativa $p(\beta)\propto 1$, la posterior $p(\beta\mid\by)\propto\prod_{i=1}^n[\Phi(X_i^{\top}\beta)]^{y_i}[1-\Phi(X_i^{\top}\beta)]^{1-y_i}$ no tiene forma conocida. Se usa la propuesta de Albert y Chib (1993), que introduce variables latentes que vinculan la variable respuesta binaria con un modelo lineal subyacente:
+\[
+Z_i=X_i^{\top}\beta+\varepsilon_i,\ \varepsilon_i\sim\N(0,1),\qquad Y_i=\begin{cases}1 & \text{si }Z_i>0\\ 0 & \text{si }Z_i\le0\end{cases}
+\]
+Notemos que
+\[
+\pi_i=P(Y_i=1)=P(Z_i>0)=P(\varepsilon_i>-X_i^{\top}\beta)=P(\varepsilon_i<X_i^{\top}\beta)=\Phi(X_i^{\top}\beta),
+\]
+por simetría de la normal estándar. Con $\sigma=1$, $p(z_i\mid\beta)=\phi(z_i-X_i^{\top}\beta)$. La verosimilitud aumentada es
+\[
+p(\by,\bz\mid\beta)=\prod_{i=1}^n p(z_i\mid\beta)\,p(y_i\mid z_i,\beta)
+\propto\prod_{i=1}^n\phi(z_i-X_i^{\top}\beta)\big[\ind(z_i>0)\ind(y_i=1)+\ind(z_i\le0)\ind(y_i=0)\big].
+\]
+
+\subsection{Condicionales (Gibbs)}
+\paragraph{$\beta$.}
+\begin{align*}
+p(\beta\mid\bz,\by)&\propto\prod_{i=1}^n\phi(z_i-X_i^{\top}\beta)
+\propto\exp\!\left(-\tfrac12\sum_{i=1}^n(z_i-X_i^{\top}\beta)^2\right)
+\propto\exp\!\left(-\tfrac12(\bz-\bX\beta)^{\top}(\bz-\bX\beta)\right)\\
+&\propto\exp\!\left(-\tfrac12\big[\beta^{\top}\bX^{\top}\bX\beta-2\beta^{\top}\bX^{\top}\bz\big]\right),
+\end{align*}
+por lo tanto $\beta\mid\bz,\by\sim\N\big((\bX^{\top}\bX)^{-1}\bX^{\top}\bz,\ (\bX^{\top}\bX)^{-1}\big)$.
+
+\paragraph{$z_i$.} Si $y_i=1$:
+\begin{multline*}
+p(z_i\mid\beta,y_i=1)\propto p(z_i\mid\beta)P(y_i=1\mid z_i,\beta)\propto\phi(z_i-X_i^{\top}\beta)\ind(z_i>0)\\
+\Rightarrow\ z_i\mid\beta,y_i=1\sim\N(X_i^{\top}\beta,1)\ind(0,\infty).
+\end{multline*}
+Si $y_i=0$:
+\[
+p(z_i\mid\beta,y_i=0)\propto\phi(z_i-X_i^{\top}\beta)\ind(z_i\le0)\ \Rightarrow\ z_i\mid\beta,y_i=0\sim\N(X_i^{\top}\beta,1)\ind(-\infty,0).
+\]
+
+\subsection{Algoritmo de Gibbs}
+\begin{enumerate}[leftmargin=2em]
+  \item Generar $\begin{cases}z_i^{s+1}\sim\N(X_i^{\top}\beta^s,1)\ind(0,\infty) & \text{si }y_i=1\\ z_i^{s+1}\sim\N(X_i^{\top}\beta^s,1)\ind(-\infty,0) & \text{si }y_i=0\end{cases}$
+  \item Generar $\beta^{s+1}\sim\N\big((\bX^{\top}\bX)^{-1}\bX^{\top}\bz^{s+1},\ (\bX^{\top}\bX)^{-1}\big)$.
+\end{enumerate}
+
+% ============================================================
+\section{Modelo para datos con censura intervalar (brecha salarial)}
+% ============================================================
+\textbf{Contexto:} la banda salarial se postula como datos censurados. Sea $Y_i$ el número de intervalo de ingreso observado del $i$-ésimo individuo y $Z_i$ el ingreso no observado:
+\[
+\begin{aligned}
+Y_i=1 &\iff 850\le Z_i\le 999, & Y_i=2 &\iff 1000\le Z_i\le 2000,\\
+Y_i=3 &\iff 2001\le Z_i\le 3000, & Y_i=4 &\iff 3001\le Z_i\le 4000,\\
+Y_i=5 &\iff 4001\le Z_i\le 5000, & Y_i=6 &\iff 5001\le Z_i\le\infty.
+\end{aligned}
+\]
+Se propone que el ingreso no observado se modele como log-normal (todos sus valores son positivos): $Z_i\overset{ind}{\sim}\text{LN}(\mu_i,\sigma^2)$, de manera que
+\[
+\text{Me}(Z_i)=e^{\mu_i},\quad \E(Z_i)=e^{\mu_i+\sigma^2/2},\quad \Var(Z_i)=e^{2\mu_i+\sigma^2}(e^{\sigma^2}-1).
+\]
+Escribiendo el modelo en términos de $w_i=\log(Z_i)$: los intervalos $[l_j,u_j]$ ($j=1,\dots,6$) se transforman como $l_j=\log(\cdot)$, $u_j=\log(\cdot)$, con $w_i\overset{ind}{\sim}\N(\mu_i,\sigma^2)$ y $\mu_i=\beta_0+\beta_1\,\text{sexo}_i$.
+
+\paragraph{Conjunta.}
+\begin{align*}
+p(\by,\omega\mid\beta,\sigma^2)&=\prod_{i=1}^n p(w_i\mid\beta,\sigma^2)\,p(y_i\mid w_i,\beta,\sigma^2)\\
+&=\prod_{i=1}^n\frac{1}{\sqrt{2\pi}}\left(\frac{1}{\sigma^2}\right)^{1/2}\exp\!\left(-\frac{1}{2\sigma^2}(w_i-X_i^{\top}\beta)^2\right)\left[\sum_{j=1}^6\ind(l_j\le w_i\le u_j)\ind(y_i=j)\right].
+\end{align*}
+Con prior no informativa $\propto 1/\sigma^2$, la posterior es
+\[
+p(\beta,\sigma^2,\omega\mid\by)\propto\prod_{i=1}^n\frac{1}{\sqrt{2\pi}}\Big(\tfrac{1}{\sigma^2}\Big)^{1/2}\exp\!\left(-\tfrac{1}{2\sigma^2}(w_i-X_i^{\top}\beta)^2\right)\left[\sum_{j=1}^6\ind(l_j\le w_i\le u_j)\ind(y_i=j)\right]\times\frac{1}{\sigma^2}.
+\]
+
+\subsection{Condicionales (Gibbs)}
+\paragraph{$\beta$.}
+\[
+p(\beta\mid\sigma^2,\omega,\by)\propto\exp\!\left(-\tfrac{1}{2\sigma^2}(\omega-\bX\beta)^{\top}(\omega-\bX\beta)\right)
+\ \Rightarrow\ \beta\mid\bz,\by\sim\N\big((\bX^{\top}\bX)^{-1}\bX^{\top}\omega,\ \sigma^2(\bX^{\top}\bX)^{-1}\big).
+\]
+
+\paragraph{$\sigma^2$.} Con $\text{SSE}=\sum_{i=1}^n(w_i-X_i^{\top}\beta)^2$:
+\[
+\sigma^2\mid\beta,\omega,\by\sim\IG\!\left(\frac{n}{2},\ \frac{1}{2}\sum_{i=1}^n(w_i-X_i^{\top}\beta)^2\right).
+\]
+
+\paragraph{$w_i$ (latentes).}
+\begin{align*}
+p(w_i\mid\beta,\sigma^2,y_i)&\propto p(w_i\mid\beta,\sigma^2)\,p(y_i\mid w_i,\beta,\sigma^2)\\
+&\propto\frac{1}{\sigma}\phi\!\left(\frac{w_i-X_i^{\top}\beta}{\sigma}\right)\ind(l_i\le w_i\le u_i),
+\end{align*}
+por lo tanto
+\[
+w_i\mid\beta,\sigma^2,y_i\sim\N(X_i^{\top}\beta,\sigma^2)\ind(l_i,u_i).
+\]
+
+\subsection{Algoritmo de Gibbs}
+\begin{enumerate}[leftmargin=2em]
+  \item Generar $w_i^{s+1}\sim\N(X_i^{\top}\beta^s,\sigma_s^2)\ind(l_i,u_i)$, $i=1,\dots,n$.
+  \item Generar $\beta^{s+1}\sim\N\big((\bX^{\top}\bX)^{-1}\bX^{\top}\omega^{s+1},\ \sigma_s^2(\bX^{\top}\bX)^{-1}\big)$.
+  \item Generar $\sigma^2_{s+1}\sim\IG\big(\tfrac{n}{2},\ \tfrac12\sum_{i=1}^n(w_i^{s+1}-X_i^{\top}\beta^{s+1})^2\big)$.
+\end{enumerate}
+
+\subsection{Estimación de la brecha salarial por género}
+Como asumimos log-normal sobre el salario real $Z_i$:
+\[
+\frac{\E(\text{Salario}\mid\text{Mujer})}{\E(\text{Salario}\mid\text{Hombre})}=\frac{\E[Z_i\mid X_i=1]}{\E[Z_i\mid X_i=0]}=\frac{\exp(\beta_0+\beta_1+\sigma^2/2)}{\exp(\beta_0+\sigma^2/2)}=\exp(\beta_1).
+\]
+Parámetro de brecha salarial por género: $\delta=1-\exp(\beta_1)$. Se obtienen los momentos y los IC para hacer inferencia a partir del muestreo de los parámetros.
+
+% ============================================================
+\section{Modelo de regresión con punto de cambio (discreto)}
+% ============================================================
+Se desea estimar el valor de $\tau$ de la razón agua/cemento a partir del cual la resistencia a la compresión del concreto decae rápidamente a medida que aumenta dicha razón.
+\[
+Y_i\overset{ind}{\sim}\N(\mu_i,\sigma^2),\qquad \mu_i=\beta_0+\beta_1 X_i+\beta_2(X_i-\tau)\ind(X_i>\tau),
+\]
+con $i=1,\dots,n$, $\beta=(\beta_0,\beta_1,\beta_2)^{\top}$ los coeficientes de regresión, $\sigma^2>0$ la varianza de los errores y $\ind(\cdot)$ la función indicadora. El modelo genera dos regímenes lineales:
+\[
+\mu_i=\begin{cases}
+\beta_0+\beta_1 X_i, & X_i\le\tau,\\[2pt]
+(\beta_0-\beta_2\tau)+(\beta_1+\beta_2)X_i, & X_i>\tau,
+\end{cases}
+\]
+es decir, un cambio de intercepto y de pendiente en el punto $\tau$. El punto de cambio $\tau$ es un parámetro desconocido, discreto con rango $\tau=50,51,\dots,81,82$.
+
+\paragraph{Prior.} $\theta=(\beta,\sigma^2,\tau)^{\top}$, $p(\theta)=p(\beta)p(\sigma^2)p(\tau)$, con
+\[
+\beta\sim\N(\beta_0,\Sigma_0),\qquad \sigma^2\sim\IG(a_0,b_0),\qquad \tau\sim\text{Uniforme-Discreta}\{50,\dots,82\}.
+\]
+
+\paragraph{Verosimilitud.} $\by\mid\theta\sim\N(X_{(\tau)}\beta,\sigma^2\bI)$, con $X_{(\tau)}$ matriz con filas $X_i(\tau)=(1,X_i,(X_i-\tau)\ind(X_i>\tau))$:
+\[
+p(\by\mid\theta)=\left(\frac{1}{2\pi}\right)^{n/2}\left(\frac{1}{\sigma^2}\right)^{n/2}\exp\!\left(-\frac{1}{2\sigma^2}(\by-X_{(\tau)}\beta)^{\top}(\by-X_{(\tau)}\beta)\right).
+\]
+La posterior es
+\begin{align*}
+p(\theta\mid\by)&\propto p(\by\mid\theta)p(\beta)p(\sigma^2)p(\tau)\\
+&\propto\Big(\tfrac{1}{\sigma^2}\Big)^{n/2}\exp\!\left(-\tfrac{1}{2\sigma^2}(\by-X_{(\tau)}\beta)^{\top}(\by-X_{(\tau)}\beta)\right)\exp\!\left(-\tfrac12(\beta-\beta_0)^{\top}\Sigma_0^{-1}(\beta-\beta_0)\right)\\
+&\quad\times\Big(\tfrac{1}{\sigma^2}\Big)^{a_0+1}\exp\!\left(-\tfrac{b_0}{\sigma^2}\right).
+\end{align*}
+
+\subsection{Condicionales (Gibbs)}
+\paragraph{$\beta$.}
+\[
+p(\beta\mid\sigma^2,\tau,\by)\propto\exp\!\left(-\tfrac{1}{2}\Big[\beta^{\top}\Big(\Sigma_0^{-1}+\tfrac{X_{(\tau)}^{\top}X_{(\tau)}}{\sigma^2}\Big)\beta-2\beta^{\top}\Big(\Sigma_0^{-1}\beta_0+\tfrac{X_{(\tau)}^{\top}\by}{\sigma^2}\Big)\Big]\right),
+\]
+por lo que
+\[
+\Sigma_\beta^{-1}=\Sigma_0^{-1}+\frac{X_{(\tau)}^{\top}X_{(\tau)}}{\sigma^2},\qquad
+\mu_\beta=\Sigma_\beta\Big(\Sigma_0^{-1}\beta_0+\frac{X_{(\tau)}^{\top}\by}{\sigma^2}\Big),
+\qquad
+\beta\mid\sigma^2,\tau,\by\sim\N(\mu_\beta,\Sigma_\beta).
+\]
+
+\paragraph{$\sigma^2$.} Con $\text{SSE}=(\by-X_{(\tau)}\beta)^{\top}(\by-X_{(\tau)}\beta)$:
+\[
+\sigma^2\mid\beta,\tau,\by\sim\IG\!\left(a_0+\frac{n}{2},\ b_0+\frac{1}{2}\text{SSE}\right).
+\]
+
+\paragraph{$\tau$.}
+\[
+p(\tau\mid\beta,\sigma^2,\by)\propto p(\by\mid\beta,\sigma^2,\tau)\,p(\tau)\propto\Big(\tfrac{1}{\sigma^2}\Big)^{n/2}\exp\!\left(-\tfrac{1}{2\sigma^2}(\by-X_{(\tau)}\beta)^{\top}(\by-X_{(\tau)}\beta)\right),
+\]
+que se evalúa en cada valor discreto del rango de $\tau$ y se normaliza.
+
+\paragraph{Algoritmo.}
+\begin{enumerate}[leftmargin=2em]
+  \item Generar $\beta^{s+1}\sim\N(\cdot,\cdot)$.
+  \item Generar $\sigma^2_{s+1}\sim\IG(\cdot,\cdot)$.
+  \item Generar $\tau^{s+1}$ de $p(\tau\mid\beta^{s+1},\sigma^{s+1},\by)$.
+\end{enumerate}
+
+% ============================================================
+\section{Metropolis-Hastings con punto de cambio continuo}
+% ============================================================
+Mismo modelo con $\mu_i=\beta_0+\beta_1 X_i+\beta_2(X_i-\tau)\ind(X_i>\tau)$, pero ahora $\tau$ es continuo, $0<\tau<1$.
+
+\paragraph{Prior.} $\theta=(\beta,\sigma^2,\tau)^{\top}$, $p(\theta)=p(\beta)p(\sigma^2)p(\tau)$, con
+\[
+\beta\sim\N(\beta_0,\Sigma_0),\qquad\sigma^2\sim\IG(a_0,b_0),\qquad\tau\sim\text{Beta}(c_0,d_0).
+\]
+
+\paragraph{Verosimilitud y posterior.} $\by\mid\theta\sim\N(X_{(\tau)}\beta,\sigma^2\bI)$, con $X_i(\tau)=(1,X_i,(X_i-\tau)\ind(X_i>\tau))$:
+\begin{align*}
+p(\theta\mid\by)&\propto\Big(\tfrac{1}{\sigma^2}\Big)^{n/2}\exp\!\left(-\tfrac{1}{2\sigma^2}(\by-X_{(\tau)}\beta)^{\top}(\by-X_{(\tau)}\beta)\right)\times\exp\!\left(-\tfrac12(\beta-\beta_0)^{\top}\Sigma_0^{-1}(\beta-\beta_0)\right)\\
+&\quad\times\Big(\tfrac{1}{\sigma^2}\Big)^{a_0+1}\exp\!\left(-\tfrac{b_0}{\sigma^2}\right)\times\tau^{c_0-1}(1-\tau)^{d_0-1}.
+\end{align*}
+
+\subsection{Condicionales}
+\paragraph{$\beta$.}
+\[
+\beta\mid\sigma^2,\tau,\by\sim\N\!\left(\Big(\Sigma_0^{-1}+\tfrac{X_{(\tau)}^{\top}X_{(\tau)}}{\sigma^2}\Big)^{-1}\Big(\Sigma_0^{-1}\beta_0+\tfrac{X_{(\tau)}^{\top}\by}{\sigma^2}\Big),\ \Big(\Sigma_0^{-1}+\tfrac{X_{(\tau)}^{\top}X_{(\tau)}}{\sigma^2}\Big)^{-1}\right).
+\]
+
+\paragraph{$\sigma^2$.} Con $\text{SSE}=(\by-X_{(\tau)}\beta)^{\top}(\by-X_{(\tau)}\beta)=\sum_{i=1}^n(y_i-X_i(\tau)^{\top}\beta)^2$:
+\[
+\sigma^2\mid\beta,\tau,\by\sim\IG\!\left(a_0+\frac{n}{2},\ b_0+\frac{1}{2}(\by-X_{(\tau)}\beta)^{\top}(\by-X_{(\tau)}\beta)\right).
+\]
+
+\paragraph{$\tau$.}
+\[
+p(\tau\mid\beta,\sigma^2,\by)\propto\prod_{i=1}^n\frac{1}{\sqrt{2\pi}\sigma}\exp\!\left(-\tfrac{1}{2\sigma^2}(y_i-X_i(\tau)^{\top}\beta)^2\right)\times\frac{\Gamma(c_0+d_0)}{\Gamma(c_0)\Gamma(d_0)}\tau^{c_0-1}(1-\tau)^{d_0-1},
+\]
+que no tiene forma cerrada. Para simular de ella se utiliza M-H con paseo aleatorio normal.
+
+\paragraph{Construcción de datos en R.}
+\begin{itemize}[leftmargin=2em]
+  \item Variables continuas: \verb|X = cbind(1, X, (X - tau)*(X > tau))|.
+  \item Variables categóricas con \verb|model.matrix|:\\
+  \verb|d$rank = as.factor(d$rank)|\\
+  \verb|X = model.matrix(~ gre + gpa + rank, d)|.
+\end{itemize}
+
+% ============================================================
+\section{Distribuciones conjugadas a recordar}
+% ============================================================
+\paragraph{Poisson--Gamma.} $Y_i\mid\lambda\sim\text{Poisson}(\lambda)$, $\lambda\sim\Ga(a,b)$:
+\[
+p(\by\mid\lambda)=\prod_{i=1}^n\frac{\lambda^{y_i}e^{-\lambda}}{y_i!}\propto\lambda^{\sum y_i}e^{-n\lambda},
+\qquad \lambda\mid\by\sim\Ga\!\left(a+\sum_{i=1}^n y_i,\ b+n\right),
+\]
+con $\E[Y]=\lambda$, $\Var[Y]=\lambda$.
+
+\paragraph{Exponencial--Gamma.} $Y_i\mid\lambda\sim\text{Exp}(\lambda)$, $\lambda\sim\Ga(a,b)$:
+\[
+p(\by\mid\lambda)=\prod_{i=1}^n\lambda e^{-\lambda y_i}=\lambda^n e^{-\lambda\sum y_i},
+\qquad \lambda\mid\by\sim\Ga\!\left(a+n,\ b+\sum y_i\right).
+\]
+
+\paragraph{Bernoulli--Beta.} $Y_i\mid p\sim\text{Bernoulli}(p)$, $p\sim\text{Beta}(a,b)$:
+\[
+p(\by\mid p)=\prod_{i=1}^n p^{y_i}(1-p)^{1-y_i}=p^{\sum y_i}(1-p)^{n-\sum y_i},
+\qquad p\mid\by\sim\text{Beta}\!\left(a+\sum y_i,\ b+n-\sum y_i\right).
+\]
+
+\paragraph{Binomial--Beta.} $Y_i\mid p\sim\text{Binomial}(n_i,p)$, $p\sim\text{Beta}(a,b)$:
+\[
+p(\by\mid p)\propto p^{\sum y_i}(1-p)^{\sum(n_i-y_i)},
+\qquad p\mid\by\sim\text{Beta}\!\left(a+\sum y_i,\ b+\sum(n_i-y_i)\right).
+\]
+
+% ============================================================
+\section{Análisis de convergencia}
+% ============================================================
+La convergencia de una cadena de Markov hacia su distribución estacionaria (posterior) se evalúa con pruebas estadísticas o inspección visual de las cadenas.
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Gráfico de trayectorias:} al alcanzar convergencia, las cadenas se mezclan y siguen una trayectoria estable y densa (banda horizontal).
+  \item \textbf{Gráficos de autocorrelación:} las autocorrelaciones deben tender a decaer al aumentar los rezagos. Autocorrelación fuerte no impide la convergencia, pero reduce la eficiencia.
+\end{itemize}
+Se puede hacer inferencia si el gráfico de trayectorias alcanza un estado estacionario y las autocorrelaciones decaen rápido. Si no hay convergencia, el primer paso es incrementar el burn-in y realizar más simulaciones. Si hay convergencia pero autocorrelaciones altas, se puede guardar solo una de cada $k$ iteraciones (\emph{thinning}, período $\texttt{thin}$); esto solo sirve para ahorrar memoria.
+
+\subsection{Prueba de Geweke}
+Prueba de diferencia de medias entre la parte inicial y final de la cadena. Se compara el 10\% inicial frente al 50\% final, descartando iteraciones intermedias.
+\[
+Z=\frac{\bar\theta_A-\bar\theta_B}{\sqrt{\tfrac{\hat S_A(0)}{N_A}+\tfrac{\hat S_B(0)}{N_B}}}\sim\N(0,1),
+\]
+donde $\bar\theta_A,\bar\theta_B$ son las medias de las partes inicial y final, $N_A,N_B$ el número de iteraciones, y $\hat S_A(0)$ y $\hat S_B(0)$ son las densidades espectrales en frecuencia cero (varianzas asintóticas ajustadas por autocorrelación):
+\[
+S(0)=\sigma^2\left(1+2\sum_{k=1}^\infty\rho_k\right).
+\]
+Si $|Z|>1.96$ (nivel 5\%) se rechaza la hipótesis nula: la cadena aún no ha convergido.
+
+\subsection{Prueba de Gelman y Rubin (PSRF)}
+Compara simultáneamente múltiples cadenas corridas en paralelo. Con $m$ cadenas de $S$ simulaciones:
+\[
+W=\frac{1}{m}\sum_{j=1}^m\left[\frac{1}{S-1}\sum_{s}(\theta_s^j-\bar\theta^j)^2\right]\ \ (\text{varianza dentro de las cadenas}),
+\]
+\[
+B=\frac{S}{m-1}\sum_{j=1}^m(\bar\theta^j-\bar\theta)^2\ \ (\text{varianza entre cadenas}),
+\]
+donde $\bar\theta$ es la media general. La estadística es
+\[
+\hat R=\sqrt{\frac{\tfrac{S-1}{S}W+\tfrac{1}{S}B}{W}}.
+\]
+Se espera $\hat R\approx 1$; en la práctica $\hat R<1.05$ indica convergencia.
+
+\subsection{Tamaño efectivo de muestra}
+\[
+N_{\text{eff}}=\frac{N}{\sum_{t=-\infty}^{\infty}\rho_t}=\frac{N}{1+2\sum_{t=1}^{\infty}\rho_t},
+\]
+donde $\rho_t$ es la autocorrelación en el lag $t$ y $N$ el número de simulaciones. A mayor autocorrelación, menor $N_{\text{eff}}$.
+
+% ============================================================
+\section{Slice Sampling}
+% ============================================================
+Quiero generar muestras de $p(\theta)$, pero tiene forma rara y no puedo aplicar Gibbs directo. Idea geométrica: bajo la curva de $p(\theta)$ hay una región
+\[
+\mathcal{R}=\{(\theta,u):0\le u\le p(\theta)\}.
+\]
+Generar puntos uniformes debajo de la curva es equivalente a muestrear de $p(\theta)$. El problema es que generar puntos uniformes bajo la curva no es fácil (habría que conocer el área en cada región). En cada iteración, con punto actual $\theta^s$:
+\begin{enumerate}[leftmargin=2em]
+  \item Dado $\theta^s$, la altura de la curva es $p(\theta^s)$. Se tira $u^{s+1}\sim\text{U}(0,p(\theta^s))$: define un nivel de corte horizontal (la región válida).
+  \item Nos movemos horizontalmente dentro del slice: $\theta^{s+1}\sim\text{U}\big(\{\theta:p(\theta)\ge u^{s+1}\}\big)$.
+\end{enumerate}
+Para encontrar los bordes del slice hay que resolver $p(\theta)=u^{s+1}$, que puede ser imposible analíticamente. Neal (2003) propone un mecanismo iterativo en dos fases:
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Stepping out (expansión):} parte de un intervalo pequeño alrededor de $\theta^s$ y lo expande hacia izquierda y derecha en pasos de tamaño $\omega$ hasta que ambos extremos caigan fuera del slice ($p<u^{s+1}$).
+  \item \textbf{Shrinkage:} toma un candidato $\theta'$ uniforme del intervalo expandido. Si $p(\theta')<u^{s+1}$, contrae el intervalo hacia $\theta^s$ por ese lado y reintenta. Cada rechazo achica el intervalo, garantizando que eventualmente caiga dentro.
+\end{itemize}
+
+\subsection{Automated Factor Slice Sampling (AFSS)}
+El algoritmo anterior opera una dimensión a la vez y funciona cuando los parámetros son independientes. Cuando dos parámetros están fuertemente correlacionados, la posterior tiene forma de elipse diagonal y si muestreamos en dirección horizontal o vertical el slice queda angostísimo. La solución es rotar el sistema de referencia para que las direcciones de exploración estén alineadas con el elipse: se realiza slice sampling con los autovectores $\Gamma_k$ de la matriz de covarianza $\Lambda$ de la posterior. $\theta^*+\eta_k\Gamma_k$ mueve $\theta^*$ en la dirección $\Gamma_k$ una distancia $\eta_k$.
+\begin{enumerate}[leftmargin=2em]
+  \item Simular $u^{s+1}\sim\text{U}(0,p(\theta^s))$.
+  \item Inicializar $\theta^*=\theta^s$. Para cada autovector $\Gamma_k$: generar $\eta_k^*\sim\text{U}\big(\{\eta_k:p(\theta^*+\eta_k\Gamma_k)\ge u^{s+1}\}\big)$ (con shrinkage y stepping out) y actualizar $\theta^*=\theta^*+\eta_k^*\Gamma_k$.
+  \item $\theta^{s+1}=\theta^*$.
+\end{enumerate}
+$\Lambda$ se estima directamente con las muestras del burn-in. \textbf{Limitaciones:} AFSS asume dependencia lineal entre parámetros (si es no lineal, el slice sigue angosto); estimar y descomponer $\Lambda$ de tamaño $K\times K$ tiene costo computacional alto, por lo que se aplica a bloques pequeños de parámetros a priori correlacionados.
+
+\subsection{Barker Proposal}
+Es un método de Metropolis-Hastings: propone un candidato y lo acepta o rechaza. La diferencia clave con M-H estándar (propuesta simétrica): en Barker se usa el gradiente de $\log p(\theta)$ para sesgar la propuesta hacia regiones de alta densidad.
+\[
+z_k\sim\N(0,\sigma^2)\ (\text{negativo o positivo}),\qquad
+q(\theta_k^s,z_k)=\frac{1}{1+\exp(-z_k\,\partial_k\log p(\theta^s))}\in(0,1).
+\]
+Si el gradiente es positivo (la densidad crece hacia la derecha) y $z_k$ es positivo, la sigmoide se acerca a $1$. La dirección $b_k\in\{-1,1\}$ se asigna $b_k=1$ con probabilidad $q(\theta_k^s,z_k)$ y $b_k=-1$ con probabilidad $1-q(\theta_k^s,z_k)$. El candidato es $\theta_k^{\text{cand}}=\theta_k^s+b_k z_k$. Se acepta con
+\[
+\alpha^B(\theta^s,\theta^{\text{cand}})=\min\!\left(1,\ \frac{p(\theta^{\text{cand}})}{p(\theta^s)}\times\prod_{k=1}^K\frac{1+\exp\big((\theta_k^s-\theta_k^{\text{cand}})\partial_k\log p(\theta^s)\big)}{1+\exp\big((\theta_k^{\text{cand}}-\theta_k^s)\partial_k\log p(\theta^{\text{cand}})\big)}\right).
+\]
+El ratio no es $1$ como en RW porque la propuesta está sesgada.
+
+% ============================================================
+\section{Estructura Nimble (ejemplo: Betting / dosis-respuesta)}
+% ============================================================
+\begin{verbatim}
+# Datos: insectos muertos (v. aleatorias del modelo)
+data      <- list(Y = c(6, 13, 18, 28, 52, 53, 61, 60))
+constants <- list(
+  N = 8,                      # numero de experimentos
+  X = c(...),                 # dosis
+  n = c(59, 60, ...)          # insectos expuestos (valores fijos)
+)
+
+# Modelo
+code <- nimbleCode({
+  for (i in 1:N) {                        # verosimilitud por experimento
+    Y[i]      ~ dbinom(size = n[i], prob = p[i])   # muertos ~ Binomial
+    logit(p[i]) <- alpha + beta * X[i]             # dosis -> p[i]
+  }
+  alpha ~ dnorm(0, sd = 100)              # priors
+  beta  ~ dnorm(0, sd = 100)
+})
+
+# Valores iniciales
+inits <- function() list(alpha = 0, beta = 0)
+
+# Construir y compilar
+model   <- nimbleModel(code, constants, data, inits())
+C_model <- compileNimble(model)
+
+# Configurar MCMC
+mcmcConf <- configureMCMC(model, monitors = c("alpha", "beta"))
+mcmc     <- buildMCMC(mcmcConf)
+C_mcmc   <- compileNimble(mcmc, project = model)
+
+# Correr la simulacion
+samples <- runMCMC(C_mcmc,
+  niter        = 10000,   # iteraciones
+  nburnin      = 2000,    # burn-in
+  nchains      = 4,       # cadenas independientes
+  summary      = TRUE,    # media, desviacion y cuantiles
+  WAIC         = TRUE,    # metrica de comparacion de modelos
+  samplesAsCodaMCMC = TRUE)
+
+# Diagnosticos
+mcmc_traces(samples$samples)   # trayectorias
+mcmc_acf(samples$samples)      # autocorrelaciones
+\end{verbatim}
+
+\end{document}

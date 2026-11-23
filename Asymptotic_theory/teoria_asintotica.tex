@@ -1,0 +1,982 @@
+\documentclass[11pt,a4paper]{article}
+
+% ------------------------------------------------------------------
+%  Paquetes
+% ------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\IfFileExists{spanish.ldf}
+  {\usepackage[spanish,es-noshorthands,es-nodecimaldot]{babel}}
+  {\usepackage[english]{babel}
+   \addto\captionsenglish{\renewcommand{\contentsname}{Índice}}}
+\IfFileExists{newpxtext.sty}
+  {\usepackage{newpxtext}\usepackage{newpxmath}}
+  {\usepackage{mathpazo}}
+\usepackage{microtype}
+\usepackage[a4paper,top=2.8cm,bottom=2.8cm,left=2.9cm,right=2.9cm,headheight=14pt]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{booktabs,array}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{2pt}
+\setlist{itemsep=1pt,topsep=4pt,leftmargin=2em}
+\renewcommand{\arraystretch}{1.2}
+\linespread{1.05}
+
+% ------------------------------------------------------------------
+%  Títulos y encabezados
+% ------------------------------------------------------------------
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{1em}{}
+\titleformat*{\subsubsection}{\normalfont\normalsize\itshape}
+\titlespacing*{\section}{0pt}{3.2ex plus 1ex minus .2ex}{1.6ex plus .2ex}
+\titlespacing*{\subsection}{0pt}{2.6ex plus 1ex minus .2ex}{1.1ex plus .2ex}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\sectionmark}[1]{\markboth{\thesection.\ #1}{}}
+\fancyhead[L]{\small\scshape Teoría asintótica}
+\fancyhead[R]{\small\itshape\leftmark}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ------------------------------------------------------------------
+%  Entornos
+% ------------------------------------------------------------------
+\theoremstyle{plain}
+\newtheorem{teorema}{Teorema}[section]
+\newtheorem{proposicion}[teorema]{Proposición}
+\theoremstyle{definition}
+\newtheorem{definicion}[teorema]{Definición}
+\newtheorem*{ejemplo}{Ejemplo}
+\newtheorem*{ejemplos}{Ejemplos}
+\theoremstyle{remark}
+\newtheorem*{intuicion}{Intuición}
+\newtheorem*{observacion}{Observación}
+\newtheorem*{resumen}{Resumen}
+\AtBeginDocument{\renewcommand{\proofname}{Demostración}}
+
+% ------------------------------------------------------------------
+%  Notación
+% ------------------------------------------------------------------
+\newcommand{\E}{\mathbb{E}}
+\renewcommand{\P}{\mathbb{P}}
+\newcommand{\R}{\mathbb{R}}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Corr}{Corr}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator*{\plim}{plim}
+\newcommand{\cp}{\xrightarrow{\;p\;}}
+\newcommand{\cd}{\xrightarrow{\;d\;}}
+\newcommand{\cL}[1]{\xrightarrow{\;L^{#1}\;}}
+\newcommand{\cas}{\xrightarrow{\;c.s.\;}}
+\newcommand{\iid}{\overset{\text{iid}}{\sim}}
+
+
+\begin{document}
+\thispagestyle{plain}
+
+\begin{center}
+  {\small\scshape Econometría\enspace·\enspace Notas de clase}\\[4pt]
+  \rule{\textwidth}{0.6pt}\\[10pt]
+  {\LARGE\bfseries Teoría asintótica}\\[6pt]
+  \rule{\textwidth}{0.6pt}\\[4pt]
+  {\small J.\,D.\ Cárdenas Barrantes\hfill Noviembre de 2026}
+\end{center}
+
+\vspace{1em}
+{\small\tableofcontents}
+\newpage
+
+% ============================================================
+\section{Introducción: el problema de fondo}
+% ============================================================
+
+En econometría queremos conocer un parámetro poblacional, por ejemplo $\beta$: un número
+\emph{fijo} que describe una relación en toda la población. Nunca lo observamos. Lo que
+observamos es una \emph{muestra}, y con ella calculamos un estimador $\hat\beta$.
+
+La idea que organiza todo el curso es la siguiente: si nos hubiera tocado otra muestra,
+habríamos obtenido otro $\hat\beta$. Por lo tanto, \textbf{$\hat\beta$ es una variable aleatoria}
+y tiene su propia distribución: la de todos los valores que tomaría a través de todas las
+muestras posibles. Eso deja dos preguntas:
+
+\begin{enumerate}
+  \item \textbf{¿Le apunta al blanco?} ¿$\hat\beta$ termina cerca del $\beta$ verdadero?
+  \item \textbf{¿Cuánto se equivoca?} ¿Cómo fluctúa $\hat\beta$ alrededor de $\beta$? Sin esto no
+        hay errores estándar, ni intervalos de confianza, ni pruebas de hipótesis.
+\end{enumerate}
+
+El obstáculo es que, para conocer la distribución \emph{exacta} de $\hat\beta$ con un $n$
+concreto, necesitaríamos conocer la distribución de la población, que es justamente lo que
+no conocemos. El truco de la teoría asintótica es preguntar qué pasa cuando $n$ es muy
+grande. Ahí todo se simplifica, y esa respuesta se usa como \emph{aproximación} para la
+muestra que tenemos.
+
+\paragraph{Plan de las notas.}
+\begin{itemize}
+  \item \textbf{Sección \ref{sec:fund}.} Fundamentos: esperanza, varianza, covarianza, la media
+        muestral, el error estándar y los grados de libertad. Dan el \emph{centro} y el
+        \emph{ancho} de un estimador.
+  \item \textbf{Sección \ref{sec:conv}.} Nociones de convergencia: qué significa que una sucesión
+        de variables aleatorias ``se acerque'' a algo.
+  \item \textbf{Sección \ref{sec:asin}.} Las herramientas asintóticas: ley de grandes números,
+        teorema de la función continua, Slutsky, teorema central del límite y método delta.
+        Responden las dos preguntas de arriba.
+\end{itemize}
+
+% ============================================================
+\section{Fundamentos de probabilidad e inferencia}\label{sec:fund}
+% ============================================================
+
+\subsection{Población, parámetro, muestra y estimador}
+
+\begin{definicion}[Conceptos básicos]\label{def:basicos}\leavevmode
+\begin{itemize}
+  \item \textbf{Población:} el universo completo que nos interesa.
+  \item \textbf{Parámetro:} un número fijo que describe a la población (por ejemplo, $\mu$,
+        $\sigma^2$ o $\beta$). Existe, pero es desconocido.
+  \item \textbf{Muestra:} las observaciones que sí vemos, $X_1,\dots,X_n$.
+  \item \textbf{Estadístico:} cualquier cálculo hecho con la muestra, como $\bar X_n$.
+  \item \textbf{Estimador:} un estadístico usado para aproximar un parámetro.
+\end{itemize}
+\end{definicion}
+
+\begin{intuicion}
+Como la muestra salió al azar, \textbf{el estimador también es aleatorio}. Toda la inferencia
+estadística consiste en entender esa aleatoriedad.
+\end{intuicion}
+
+\subsection{Variables aleatorias y distribuciones}
+
+Una \textbf{variable aleatoria} es una regla que asigna un número a cada resultado posible del
+azar: $X=X(\omega)$, donde $\omega$ representa el ``estado del mundo'' (por ejemplo, qué
+muestra nos tocó). Lo que la hace aleatoria \emph{no} es tener varianza positiva, sino que su
+valor dependa de $\omega$. Una constante es el caso trivial: una variable aleatoria que
+siempre toma el mismo valor.
+
+\begin{definicion}[Función de distribución acumulada (CDF)]\label{def:cdf}
+La CDF de $X$ es
+\[
+F(u)=\P(X\le u),\qquad u\in\R .
+\]
+Para un vector, $X\le u$ significa que cada componente es menor o igual que la
+correspondiente de $u$.
+\end{definicion}
+
+La CDF acumula probabilidad de izquierda a derecha: empieza en $0$ y termina en $1$. En una
+variable discreta avanza a saltos; en una continua sube de forma suave. Describe la
+distribución completa. Como describir una distribución entera es mucho, se resume con dos
+números: dónde está centrada (la esperanza) y qué tan dispersa es (la varianza).
+
+\subsection{Esperanza}
+
+\begin{definicion}[Esperanza]\label{def:esperanza}
+\[
+\E[Y]=\sum_y y\,\P(Y=y)\quad\text{(caso discreto)},\qquad
+\E[Y]=\int y\,f(y)\,dy\quad\text{(caso continuo)}.
+\]
+\end{definicion}
+
+\begin{intuicion}
+Es el centro de gravedad de la distribución: el promedio al que llegaríamos si repitiéramos
+el experimento infinitas veces.
+\end{intuicion}
+
+\begin{proposicion}[Linealidad de la esperanza]\label{prop:linE}
+Para constantes $a,b$ y variables $X,Y$:
+\[
+\E[a+bY]=a+b\,\E[Y],\qquad \E[X+Y]=\E[X]+\E[Y].
+\]
+La segunda vale siempre, sean $X$ e $Y$ independientes o no.
+\end{proposicion}
+
+Desplazar todos los valores en $a$ desplaza el centro en $a$; multiplicarlos por $b$
+multiplica el centro por $b$. En la fórmula, las constantes salen de la suma o de la integral.
+
+\subsection{Varianza y desviación estándar}
+
+\begin{definicion}[Varianza]\label{def:var}
+Con $\mu=\E[Y]$,
+\[
+\Var(Y)=\E\big[(Y-\mu)^2\big].
+\]
+\end{definicion}
+
+\textbf{¿Por qué al cuadrado?} Si promediamos las desviaciones tal cual, se cancelan:
+$\E[Y-\mu]=\E[Y]-\mu=0$. Al elevarlas al cuadrado todas son positivas, y las grandes pesan más.
+
+\begin{proposicion}[Fórmula de cálculo]\label{prop:varcalc}
+\[
+\Var(Y)=\E[Y^2]-\mu^2 .
+\]
+\end{proposicion}
+\begin{proof}
+Desarrollamos el cuadrado: $(Y-\mu)^2=Y^2-2\mu Y+\mu^2$. Por linealidad,
+$\E[(Y-\mu)^2]=\E[Y^2]-2\mu\E[Y]+\mu^2=\E[Y^2]-2\mu^2+\mu^2=\E[Y^2]-\mu^2$.
+\end{proof}
+
+\begin{proposicion}[Varianza de una transformación lineal]\label{prop:varlin}
+\[
+\Var(a+bY)=b^2\,\Var(Y).
+\]
+\end{proposicion}
+\begin{proof}
+La media de $a+bY$ es $a+b\mu$, así que su desviación es $(a+bY)-(a+b\mu)=b(Y-\mu)$.
+Entonces $\Var(a+bY)=\E[b^2(Y-\mu)^2]=b^2\Var(Y)$.
+\end{proof}
+
+\begin{intuicion}
+La constante $a$ desaparece porque mover todos los valores no cambia qué tan dispersos
+están. La constante $b$ sale \emph{al cuadrado} porque la varianza mide desviaciones al
+cuadrado.
+\end{intuicion}
+
+\begin{definicion}[Desviación estándar]\label{def:sd}
+\[
+\sigma=\sqrt{\Var(Y)}.
+\]
+\end{definicion}
+
+La varianza está en unidades al cuadrado (si $Y$ está en soles, la varianza está en
+soles$^2$). La raíz la devuelve a las unidades de $Y$. Por eso la desviación estándar es la
+que se interpreta como ``distancia típica a la media'', la que se usa para estandarizar y la
+que se reporta como error estándar.
+
+\subsection{Covarianza, correlación e independencia}
+
+\begin{definicion}[Covarianza y correlación]\label{def:cov}
+\[
+\Cov(X,Y)=\E\big[(X-\mu_X)(Y-\mu_Y)\big],\qquad
+\Corr(X,Y)=\frac{\Cov(X,Y)}{\sigma_X\sigma_Y}\in[-1,1].
+\]
+\end{definicion}
+
+La covarianza mide si dos variables se mueven juntas: es positiva si, cuando una está sobre
+su media, la otra suele estarlo también; negativa si se mueven en sentido opuesto; cero si no
+hay relación \emph{lineal}. La correlación es la covarianza estandarizada.
+
+\begin{proposicion}[Formas equivalentes de la covarianza]\label{prop:covforms}\leavevmode
+\begin{enumerate}
+  \item Fórmula de cálculo: $\Cov(X,Y)=\E[XY]-\E[X]\E[Y]$.
+  \item Desde la correlación: $\Cov(X,Y)=\rho\,\sigma_X\sigma_Y$.
+  \item Bilinealidad: $\Cov(aX+bY,Z)=a\Cov(X,Z)+b\Cov(Y,Z)$.
+  \item La varianza es un caso particular: $\Var(Y)=\Cov(Y,Y)$.
+\end{enumerate}
+\end{proposicion}
+\begin{proof}[Demostración de (1)]
+$(X-\mu_X)(Y-\mu_Y)=XY-\mu_YX-\mu_XY+\mu_X\mu_Y$. Tomando esperanza:
+$\E[XY]-\mu_X\mu_Y-\mu_X\mu_Y+\mu_X\mu_Y=\E[XY]-\mu_X\mu_Y$.
+\end{proof}
+
+\begin{proposicion}[Varianza de una suma]\label{prop:varsuma}
+\[
+\Var(X+Y)=\Var(X)+\Var(Y)+2\Cov(X,Y),
+\]
+y en general
+\[
+\Var\Big(\sum_{i=1}^n Y_i\Big)=\sum_{i=1}^n\Var(Y_i)+\sum_{i\neq j}\Cov(Y_i,Y_j).
+\]
+\end{proposicion}
+\begin{proof}
+La desviación de la suma es la suma de las desviaciones. Al elevar al cuadrado,
+$(a+b)^2=a^2+b^2+2ab$: los cuadrados dan las varianzas y los términos cruzados, las
+covarianzas.
+\end{proof}
+
+\begin{proposicion}[Independencia]\label{prop:indep}
+Si $X$ e $Y$ son independientes, entonces $\Cov(X,Y)=0$. Lo contrario no es cierto en general:
+covarianza cero no implica independencia.
+\end{proposicion}
+
+\begin{proposicion}[Ley de varianza total]\label{prop:vartotal}
+\[
+\Var(Y)=\E\big[\Var(Y\mid X)\big]+\Var\big(\E[Y\mid X]\big).
+\]
+La variación total es la variación \emph{dentro} de los grupos más la variación \emph{entre}
+los promedios de los grupos.
+\end{proposicion}
+
+\begin{definicion}[Matriz de varianzas y covarianzas]\label{def:sigma}
+Para un vector aleatorio $X\in\R^k$ con media $\mu$,
+\[
+\Sigma=\E\big[(X-\mu)(X-\mu)'\big]=\E[XX']-\mu\mu'.
+\]
+La diagonal contiene las varianzas; fuera de la diagonal, las covarianzas.
+\end{definicion}
+
+\subsection{La muestra i.i.d.}
+
+Decimos que $X_1,\dots,X_n$ son \textbf{i.i.d.} si son:
+\begin{itemize}
+  \item \textbf{independientes:} una observación no afecta a otra (todas las covarianzas son cero);
+  \item \textbf{idénticamente distribuidas:} todas vienen de la misma población, con media $\mu$
+        y varianza $\sigma^2$.
+\end{itemize}
+
+\subsection{La media muestral}\label{sec:media}
+
+\[
+\bar X_n=\frac1n\sum_{i=1}^n X_i .
+\]
+
+\begin{teorema}[Media y varianza de la media muestral]\label{teo:mediamuestral}
+Si $X_1,\dots,X_n$ son i.i.d. con media $\mu$ y varianza $\sigma^2$,
+\[
+\E[\bar X_n]=\mu,\qquad \Var(\bar X_n)=\frac{\sigma^2}{n},\qquad
+\text{desv. est.}(\bar X_n)=\frac{\sigma}{\sqrt n}.
+\]
+\end{teorema}
+\begin{proof}
+\textbf{Esperanza.} Por linealidad,
+$\E[\bar X_n]=\frac1n\sum\E[X_i]=\frac1n\cdot n\mu=\mu$.
+
+\textbf{Varianza.}
+\begin{enumerate}
+  \item La constante $\tfrac1n$ sale al cuadrado:
+        $\Var(\bar X_n)=\frac1{n^2}\Var\big(\sum X_i\big)$.
+  \item Por independencia, las covarianzas son cero; por distribución idéntica, cada varianza
+        es $\sigma^2$: $\Var\big(\sum X_i\big)=n\sigma^2$.
+  \item Juntando: $\Var(\bar X_n)=\frac{n\sigma^2}{n^2}=\frac{\sigma^2}{n}$, y la desviación
+        estándar es su raíz, $\sigma/\sqrt n$.
+\end{enumerate}
+\end{proof}
+
+\begin{intuicion}
+La suma acumula incertidumbre: su varianza crece como $n$, pero su desviación estándar solo
+como $\sqrt n$, porque los errores independientes \emph{se cancelan parcialmente} (unos van
+hacia arriba, otros hacia abajo). Al dividir entre $n$, la incertidumbre del promedio cae como
+$1/\sqrt n$. Consecuencia práctica: para reducir el error a la mitad se necesitan
+\emph{cuatro} veces más datos.
+\end{intuicion}
+
+\begin{observacion}
+La fórmula $\sigma^2/n$ depende del supuesto i.i.d. Si las observaciones están correlacionadas
+(como en series de tiempo), las covarianzas no se anulan y hay que sumarlas: aparece la
+\emph{varianza de largo plazo} y los errores estándar HAC.
+\end{observacion}
+
+\subsection{Distribución muestral y error estándar}
+
+\begin{definicion}[Distribución muestral y error estándar]\label{def:se}
+La \textbf{distribución muestral} de un estimador es su distribución a través de todas las
+muestras posibles. El \textbf{error estándar} es su desviación estándar. Para la media
+muestral es $\sigma/\sqrt n$, y en la práctica se estima con $s/\sqrt n$.
+\end{definicion}
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & Qué mide & ¿Depende de $n$? \\
+\midrule
+$\sigma$ & Dispersión de \emph{los datos} & No \\
+$\sigma/\sqrt n$ & Dispersión \emph{del estimador} & Sí: se achica \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{La varianza muestral y el \texorpdfstring{$n-1$}{n-1}}
+
+\[
+s^2=\frac{1}{n-1}\sum_{i=1}^n(X_i-\bar X_n)^2 .
+\]
+
+\begin{teorema}[Insesgadez de $s^2$]\label{teo:s2}
+Si las $X_i$ son i.i.d. con varianza $\sigma^2$, entonces $\E[s^2]=\sigma^2$.
+\end{teorema}
+\begin{proof}
+\begin{enumerate}
+  \item Sumando y restando $\mu$ dentro del paréntesis y desarrollando, los términos cruzados se
+        simplifican y queda
+        $\sum(X_i-\bar X_n)^2=\sum(X_i-\mu)^2-n(\bar X_n-\mu)^2$.
+  \item $\E\big[\sum(X_i-\mu)^2\big]=n\sigma^2$ y
+        $\E\big[n(\bar X_n-\mu)^2\big]=n\Var(\bar X_n)=\sigma^2$.
+  \item Restando: $\E\big[\sum(X_i-\bar X_n)^2\big]=(n-1)\sigma^2$. Dividir entre $n-1$ da un
+        estimador insesgado.
+\end{enumerate}
+\end{proof}
+
+\begin{intuicion}[grados de libertad]
+$\bar X_n$ se calcula con los mismos datos, así que está más cerca de ellos que el verdadero
+$\mu$; medir las desviaciones respecto de $\bar X_n$ las subestima. Además, las desviaciones
+cumplen una restricción, $\sum(X_i-\bar X_n)=0$: si conocemos $n-1$ de ellas, la última queda
+determinada. Solo $n-1$ son libres. Estimar la media ``gasta'' un \textbf{grado de libertad}.
+
+En asintótica da igual dividir entre $n$ o entre $n-1$: como $\frac{n-1}{n}\to1$, ambos
+estimadores son consistentes.
+\end{intuicion}
+
+\subsection{Errores, residuos y grados de libertad en la regresión}\label{sec:gl}
+
+En el modelo $y_i=x_i'\beta+u_i$, con $k$ parámetros:
+
+\begin{center}
+\begin{tabular}{@{}p{3.2cm}p{5.2cm}p{5.2cm}@{}}
+\toprule
+ & Error $u_i$ & Residuo $\hat u_i=y_i-x_i'\hat\beta$ \\
+\midrule
+Distancia a & La recta verdadera ($\beta$) & La recta estimada ($\hat\beta$) \\
+¿Se observa? & No & Sí \\
+¿Depende de nuestra elección? & No: lo fija la naturaleza & Sí \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Hay un residuo por observación, $n$ en total. MCO elige la recta que minimiza la
+\emph{suma} de residuos al cuadrado (no cada residuo por separado, lo cual es imposible si
+los puntos no están alineados):
+\[
+\hat\beta=\arg\min_\beta\sum_{i=1}^n(y_i-x_i'\beta)^2 .
+\]
+Derivando respecto de cada $\beta_j$ se obtienen $k$ condiciones de primer orden,
+\[
+\sum_{i=1}^n x_{ij}\hat u_i=0,\quad j=1,\dots,k\qquad\Longleftrightarrow\qquad X'\hat u=0 .
+\]
+Con constante, los residuos suman cero; con cada regresor, los residuos no están
+correlacionados con él.
+
+\begin{teorema}[Estimador insesgado de $\sigma^2$]\label{teo:s2reg}
+Bajo $\E[uu'\mid X]=\sigma^2I$,
+\[
+s^2=\frac{1}{n-k}\sum_{i=1}^n\hat u_i^2\qquad\text{cumple}\qquad\E[s^2]=\sigma^2 .
+\]
+\end{teorema}
+\begin{proof}
+Sea $M=I-X(X'X)^{-1}X'$, simétrica e idempotente, con $\hat u=Mu$. Entonces
+$\sum\hat u_i^2=u'Mu$. Como un escalar es igual a su traza y $\tr(AB)=\tr(BA)$,
+\[
+\E[u'Mu]=\E[\tr(Muu')]=\tr(M\,\sigma^2I)=\sigma^2\tr(M),
+\]
+y $\tr(M)=n-\tr\big((X'X)^{-1}X'X\big)=n-k$.
+\end{proof}
+
+\begin{intuicion}[el ajuste perfecto y el sobreajuste]
+Los $n$ residuos deben cumplir $k$ ecuaciones, así que solo $n-k$ son libres. Lo que queremos
+estimar es la varianza de los \emph{errores}; los residuos son versiones achicadas de ellos,
+porque MCO ajustó $k$ parámetros para hacerlos pequeños. El $n-k$ corrige ese achicamiento.
+
+\textbf{El caso $k=n$.} Hacer que la recta pase por todos los puntos es resolver $n$
+ecuaciones con $k$ incógnitas. Si $k=n$, siempre hay solución exacta, \emph{sean cuales sean
+los datos}: los residuos son cero y el ajuste es ``perfecto''. Pero
+\[
+\hat\beta=X^{-1}y=\beta+X^{-1}u :
+\]
+todo el ruido de la muestra quedó dentro de $\hat\beta$. En cambio, con $k<n$,
+\[
+\hat\beta-\beta=\Big(\tfrac1nX'X\Big)^{-1}\tfrac1n\sum x_iu_i ,
+\]
+y el último factor es un \emph{promedio}: los ruidos positivos y negativos se cancelan.
+
+\textbf{Señal y ruido.} La señal ($x'\beta$) es común a todas las observaciones; el ruido es
+propio de cada una. Solo comparando muchas observaciones se distingue lo que se repite (señal)
+de lo que cambia (ruido), como con varios testigos de un mismo hecho. Con $k=n$ cada
+parámetro tiene, en efecto, un solo testigo: el modelo memoriza señal y ruido mezclados.
+Dentro de la muestra parece perfecto; con datos nuevos, cuyo ruido es otro, predice mal. Eso
+es el \textbf{sobreajuste}. Los grados de libertad son los testigos de sobra que permiten
+promediar y cancelar el ruido.
+\end{intuicion}
+
+\subsection{Posición, escala y forma: estandarizar}\label{sec:estandarizar}
+
+Toda variable aleatoria se puede descomponer en tres piezas:
+\[
+Y=\underbrace{\mu}_{\text{posición}}+\underbrace{\sigma_Y}_{\text{escala}}\times
+\underbrace{Z}_{\text{forma}},\qquad \E[Z]=0,\ \Var(Z)=1 .
+\]
+\begin{itemize}
+  \item \textbf{Posición:} dónde está centrada.
+  \item \textbf{Escala:} qué tan ancha es (la desviación estándar).
+  \item \textbf{Forma:} lo que queda al quitar posición y escala; el patrón de cómo se reparte
+        la probabilidad (campana, plana, asimétrica\ldots).
+\end{itemize}
+Cambiar la escala estira o comprime la distribución, pero no cambia su forma, igual que
+cambiar el tamaño de una foto.
+
+\begin{definicion}[Estandarizar]\label{def:estand}
+\[
+Z=\frac{Y-\mu}{\sigma_Y}.
+\]
+Restar la media quita la posición; dividir entre la desviación estándar quita la escala. Lo
+que queda es la forma. Des-estandarizar es el camino inverso: $Y=\mu+\sigma_YZ$.
+\end{definicion}
+
+Aplicado a la media muestral, cuya desviación estándar es $\sigma/\sqrt n$:
+\[
+Z_n=\frac{\bar X_n-\mu}{\sigma/\sqrt n}=\frac{\sqrt n(\bar X_n-\mu)}{\sigma}.
+\]
+\textbf{De aquí viene el $\sqrt n$}: es parte de dividir entre la desviación estándar del
+estimador.
+
+\begin{intuicion}[el puente a la teoría asintótica]
+Con cuentas de esperanza y varianza conocemos, para cualquier $n$, el \emph{centro} de
+$\bar X_n$ ($\mu$) y su \emph{ancho} ($\sigma/\sqrt n$). Lo que en general no conocemos es su
+\emph{forma}: solo la sabemos exactamente si los datos son normales (en cuyo caso el
+estadístico $t$ con $s$ sigue una $t$ de Student con $n-1$ grados de libertad). La teoría
+asintótica resuelve eso.
+\end{intuicion}
+
+% ============================================================
+\section{Nociones de convergencia}\label{sec:conv}
+% ============================================================
+
+\subsection{Sucesiones de números}
+
+\begin{definicion}[Límite de una sucesión]\label{def:limite}
+$a_n\to L$ si para todo $\epsilon>0$ existe $N$ tal que $|a_n-L|<\epsilon$ para todo $n>N$.
+\end{definicion}
+
+$\epsilon$ es la tolerancia (qué tan cerca queremos estar) y $N$ es desde cuándo se cumple.
+Por ejemplo, $a_n=\frac{n}{n+1}\to1$: como $|a_n-1|=\frac1{n+1}$, basta $n>\frac1\epsilon-1$.
+
+\subsection{¿Por qué con variables aleatorias es distinto?}
+
+$X_n$ es una función de $\omega$: para cada muestra posible hay una sucesión de números
+distinta. Ya no basta la definición anterior; hay que decidir \emph{en qué sentido} $X_n$ se
+acerca a su límite. Hay cuatro sentidos, de más a menos exigente en general.
+
+\subsection{Los cuatro modos de convergencia}
+
+\begin{definicion}[Convergencia casi segura]\label{def:cs}
+$X_n\cas X$ si $\P\big(\{\omega: X_n(\omega)\to X(\omega)\}\big)=1$: para casi todo estado
+del mundo, la sucesión de números converge.
+\end{definicion}
+
+\begin{definicion}[Convergencia en probabilidad]\label{def:cprob}
+$X_n\cp X$ (o $\plim X_n=X$) si, para todo $\varepsilon>0$,
+\[
+\P\big(|X_n-X|>\varepsilon\big)\to0
+\qquad\Longleftrightarrow\qquad
+\P\big(|X_n-X|\le\varepsilon\big)\to1 ,
+\]
+donde $|\cdot|$ es la norma euclidiana.
+\end{definicion}
+
+\begin{intuicion}
+Para cada $\varepsilon$ fijo, $p_n=\P(|X_n-X|>\varepsilon)$ es una \emph{sucesión de números},
+y la definición pide que vaya a cero en el sentido usual. Hay dos tolerancias: $\varepsilon$
+(qué tan cerca) y la del límite de $p_n$ (qué tan rara debe ser la excepción). No pide que
+$X_n=X$; pide que equivocarse por más de $\varepsilon$ se vuelva improbable. La forma con
+``$\le\varepsilon$'' (la que usa Hansen) es el evento complementario.
+
+Para vectores, la convergencia en probabilidad equivale a la de cada componente, porque
+$|v_j|\le\|v\|\le\sum_j|v_j|$.
+\end{intuicion}
+
+\begin{definicion}[Convergencia en $q$-ésimo momento]\label{def:cLq}
+Para $q\ge1$, $X_n\cL{q}X$ si $\E\big[|X_n-X|^q\big]\to0$. Con $q=2$ se llama convergencia en
+media cuadrática.
+\end{definicion}
+
+\begin{definicion}[Convergencia en distribución]\label{def:cdist}
+$X_n\cd X$ si $\P(X_n\le u)\to\P(X\le u)$ en todo punto $u$ donde la CDF de $X$ es continua.
+La distribución de $X$ se llama \textbf{distribución asintótica} o límite de $X_n$.
+\end{definicion}
+
+\begin{intuicion}[convergencia en distribución]
+Solo pide que los \emph{histogramas} (las CDF) se parezcan, no que los valores estén cerca.
+Si $Z\sim N(0,1)$ y $X_n=-Z$, entonces $X_n\cd Z$ trivialmente, aunque $|X_n-Z|=2|Z|$.
+
+\textbf{¿Por qué solo en puntos de continuidad?} Sea $X_n=1/n$ (constante) y $X=0$. Para todo
+$u\neq0$, $F_n(u)\to F(u)$; pero en $u=0$, $F_n(0)=0$ para todo $n$ y $F(0)=1$. Es absurdo
+decir que $1/n$ no converge a $0$: el problema es solo el punto donde $F$ salta, donde toda la
+masa está concentrada y un corrimiento mínimo la deja de un lado o del otro. Si el límite es
+normal, su CDF no tiene saltos y la convergencia debe darse en todo $u$.
+
+\textbf{Uso práctico:} para $n$ grande, $\P(X_n\le u)\approx F(u)$. Así se calculan p-valores e
+intervalos.
+\end{intuicion}
+
+\subsection{Desigualdades fundamentales}
+
+\begin{teorema}[Desigualdad de Markov]\label{teo:markov}
+Para cualquier variable $X$ y $q,\varepsilon>0$,
+\[
+\P\big(|X|>\varepsilon\big)\le\frac{\E|X|^q}{\varepsilon^q}.
+\]
+\end{teorema}
+
+\begin{intuicion}
+Si el ingreso promedio es 1000, a lo más el 20\% puede ganar más de 5000: si fueran más, solo
+ellos ya aportarían más de $0.2\times5000=1000$ al promedio. Si la media es chica, no puede
+haber mucha probabilidad lejos del cero. Markov es el \textbf{puente entre momentos y
+probabilidades}, y no requiere conocer la distribución.
+\end{intuicion}
+
+\begin{teorema}[Jensen]\label{teo:jensen}
+Si $f$ es convexa y $\E|X|,\E|f(X)|<\infty$, entonces $f(\E[X])\le\E[f(X)]$. Si $f$ es cóncava,
+la desigualdad se invierte.
+\end{teorema}
+
+En una curva con forma de U, el promedio de las alturas queda por encima de la altura en el
+promedio. Con $f(x)=x^2$: $(\E X)^2\le\E X^2$, es decir, $\Var(X)\ge0$.
+
+\begin{teorema}[Cauchy--Schwarz]\label{teo:cs}
+Si $\E[u^2],\E[v^2]<\infty$, entonces $\E[uv]^2\le\E[u^2]\E[v^2]$, con igualdad solo si
+$u=\alpha v$ con probabilidad 1.
+\end{teorema}
+\begin{proof}
+Para todo $\lambda$, $0\le\E[(u-\lambda v)^2]=\E[u^2]-2\lambda\E[uv]+\lambda^2\E[v^2]$. Una
+parábola que nunca es negativa tiene discriminante no positivo:
+$4\E[uv]^2-4\E[u^2]\E[v^2]\le0$.
+\end{proof}
+
+Aplicada a variables centradas, dice que $|\Corr(X,Y)|\le1$: cuánto se mueven juntas dos
+variables nunca supera el producto de sus tamaños.
+
+\subsection{¿Qué es aleatorio y qué es el límite?}
+
+Lo aleatorio es siempre $X_n$, lo que calculamos con la muestra. El nombre del modo
+(``en probabilidad'', ``en distribución'') describe \emph{el criterio} con que juzgamos la
+cercanía, no la naturaleza del límite. En econometría, sin embargo, hay un uso típico:
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Modo & Lo aleatorio & El límite & Para qué \\
+\midrule
+En probabilidad & $\hat\beta_n$ & $\beta$ (constante) & Consistencia \\
+En distribución & $\sqrt n(\hat\beta_n-\beta)$ & $N(0,V)$ (aleatorio) & Inferencia \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Una constante es una variable aleatoria \textbf{degenerada}: toda su probabilidad está en un
+punto, su varianza es cero y su CDF es un escalón. Es el caso extremo de una distribución a la
+que se le quitó toda la dispersión.
+
+% ============================================================
+\section{Teoría asintótica: las herramientas}\label{sec:asin}
+% ============================================================
+
+\subsection{Ley débil de los grandes números}
+
+\begin{teorema}[WLLN]\label{teo:wlln}
+Si $X_1,\dots,X_n$ son i.i.d. y $\E[X_i]=\mu$ existe, entonces $\bar X_n\cp\mu$.
+\end{teorema}
+\begin{proof}[Demostración (con varianza finita)]
+Por Markov con $q=2$ aplicado a $\bar X_n-\mu$ y el Teorema \ref{teo:mediamuestral},
+$\P(|\bar X_n-\mu|>\varepsilon)\le\frac{\sigma^2}{n\varepsilon^2}\to0$. El enunciado general
+solo requiere que exista la media.
+\end{proof}
+
+\begin{intuicion}
+Al promediar muchas observaciones independientes, los errores por arriba y por abajo se
+cancelan, y el pedazo (la muestra) se parece cada vez más al todo (la población). Es el
+\textbf{motor} de casi todos los estimadores: el parámetro se escribe con promedios
+poblacionales y el estimador usa los mismos promedios, pero muestrales.
+\end{intuicion}
+
+\subsection{Consistencia}
+
+\begin{definicion}[Consistencia]\label{def:consist}
+$\hat\theta_n$ es consistente para $\theta$ si $\hat\theta_n\cp\theta$, donde $\theta$ es el
+valor \emph{verdadero} del parámetro.
+\end{definicion}
+
+\begin{intuicion}[el arquero]\leavevmode
+\begin{itemize}
+  \item \textbf{Insesgado:} los tiros, aunque dispersos, están centrados en el blanco
+        ($\E[\hat\theta_n]=\theta$ para cada $n$). Es una propiedad de muestra finita.
+  \item \textbf{Consistente:} con más práctica (más datos), los tiros se juntan sobre el blanco.
+        Es una propiedad del límite.
+\end{itemize}
+Ninguna implica la otra: $X_1$ es insesgado pero no consistente; $\bar X_n+\frac1n$ es sesgado
+pero consistente. Y converger no basta: $\bar X_n+1$ converge, pero a $\mu+1$, así que no es
+consistente.
+\end{intuicion}
+
+\subsection{Convergencia conjunta y teorema de la función continua}
+
+\begin{proposicion}[Marginal implica conjunta (en probabilidad)]\label{prop:conj}
+Si $X_n\cp X$ e $Y_n\cp Y$, entonces $(X_n,Y_n)\cp(X,Y)$.
+\end{proposicion}
+\begin{proof}
+$|(X_n,Y_n)-(X,Y)|\le|X_n-X|+|Y_n-Y|$. Si la suma supera $\varepsilon$, al menos uno de los
+términos supera $\varepsilon/2$, así que
+$\P(\cdot>\varepsilon)\le\P(|X_n-X|>\tfrac\varepsilon2)+\P(|Y_n-Y|>\tfrac\varepsilon2)\to0$.
+\end{proof}
+
+\begin{teorema}[Teorema de la función continua (CMT)]\label{teo:cmt}
+Si $g$ es continua en un conjunto $C$ con $\P(X\in C)=1$, entonces
+\[
+X_n\cp X\Rightarrow g(X_n)\cp g(X),\qquad X_n\cd X\Rightarrow g(X_n)\cd g(X).
+\]
+\end{teorema}
+
+\begin{intuicion}
+Si los ingredientes llegan a su valor verdadero, una receta continua también llega al
+resultado verdadero: un error pequeño en los ingredientes produce un error pequeño en el
+resultado. Junto con la propiedad anterior, permite combinar: $X_n+Y_n$, $X_nY_n$,
+$X_n/Y_n$ (si $Y\neq0$), $1/\bar X_n$, etc.
+
+\textbf{¿Por qué continuidad?} Con $g(x)=\mathbf 1\{x>0\}$ y $X_n=1/n\to0$: $g(X_n)=1$ para todo
+$n$, pero $g(0)=0$. El salto de $g$ justo en el límite rompe el resultado.
+
+En distribución: si $Z_n\cd N(0,1)$, entonces $Z_n^2\cd\chi^2_1$ y $|Z_n|\cd|N(0,1)|$.
+\end{intuicion}
+
+\begin{proposicion}[Propiedades de la convergencia en distribución]\label{prop:propd}\leavevmode
+\begin{enumerate}
+  \item La convergencia marginal en distribución \emph{no} implica la conjunta. Con
+        $Z\sim N(0,1)$: los pares $(Z,Z)$ y $(Z,-Z)$ tienen las mismas marginales, pero
+        $Z+Z=2Z$ y $Z-Z=0$. La distribución de cada una no dice cómo se relacionan.
+  \item Excepción: si $X_n\cd X$ e $Y_n\cd c$ (constante), entonces $(X_n,Y_n)\cd(X,c)$.
+  \item Si $X_n\cd X$ y $|Y_n-X_n|\cp0$, entonces $Y_n\cd X$.
+\end{enumerate}
+\end{proposicion}
+
+\subsection{El lema de Slutsky}
+
+\begin{teorema}[Slutsky]\label{teo:slutsky}
+Si $X_n\cd X$ e $Y_n\cp c$, con $c$ una constante, entonces
+\[
+X_n+Y_n\cd X+c,\qquad X_nY_n\cd cX,\qquad \frac{X_n}{Y_n}\cd\frac{X}{c}\ \ (c\neq0).
+\]
+Vale también con vectores y matrices de dimensiones compatibles: si $Y_n\cp C$, entonces
+$Y_nX_n\cd CX$, $X_n'Y_n\cd X'C$ y $Y_n^{-1}X_n\cd C^{-1}X$ (si $C$ es invertible).
+\end{teorema}
+
+\begin{intuicion}[el problema que resuelve]
+En econometría casi siempre combinamos una parte que sigue siendo aleatoria en el límite
+(como $\sqrt n(\bar X_n-\mu)$, por el CLT) con una parte que converge a un número fijo (como
+$s_n\to\sigma$). En general, conocer el límite de cada parte por separado \emph{no} basta para
+conocer el de la combinación: el ejemplo $(Z,Z)$ frente a $(Z,-Z)$ muestra que el resultado
+depende de cómo se relacionan.
+
+Si una de las partes converge a una \textbf{constante}, el problema desaparece: una constante no
+tiene aleatoriedad, así que no puede moverse junto con nada. Para $n$ grande, $Y_n$
+prácticamente \emph{es} $c$. \textbf{Lo que converge a una constante se reemplaza por esa
+constante.}
+\end{intuicion}
+
+\begin{observacion}[¿por qué $p$ para la constante y $d$ para la parte aleatoria?]\leavevmode
+\begin{itemize}
+  \item \textbf{Parte constante:} cuando el límite es constante, convergencia en probabilidad y
+        en distribución son equivalentes: si el histograma colapsa en un pico sobre $c$, toda la masa
+        está cerca de $c$. El requisito real es que
+        el límite \emph{sea una constante}.
+  \item \textbf{Parte aleatoria:} se pide lo mínimo, solo distribución, porque el CLT solo da eso:
+        $\sqrt n(\bar X_n-\mu)$ no se pega a ninguna variable fija; solo su forma se estabiliza.
+  \item \textbf{Resultado en distribución:} una cadena es tan fuerte como su eslabón más débil
+        (con $Y_n=1$, $X_nY_n=X_n$). Y es justo lo que se necesita para inferencia: probabilidades
+        del tipo $\P(|t|>1.96)$.
+  \item Si $Y_n$ converge a algo \emph{aleatorio}, Slutsky no aplica.
+\end{itemize}
+\end{observacion}
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Aplicación & Parte aleatoria & Parte que va a una constante \\
+\midrule
+Estadístico $t$ & $\sqrt n(\bar X_n-\mu)$ & $1/s_n\to1/\sigma$ \\
+Método delta (consistencia) & $\sqrt n(\hat\theta-\theta)$ & $1/\sqrt n\to0$ \\
+Método delta (límite) & $\sqrt n(\hat\theta-\theta)$ & $g'(\theta^*)\to g'(\theta)$ \\
+MCO & $\frac1{\sqrt n}\sum x_iu_i$ & $(\frac1nX'X)^{-1}\to Q^{-1}$ \\
+Wald multivariado & $\sqrt n(\bar X_n-\mu)$ & $\hat\Sigma_n^{-1}\to\Sigma^{-1}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Dispositivo de Cramér--Wold}
+
+\begin{teorema}[Cramér--Wold]\label{teo:cw}
+$X_n\cd X$ si y solo si $t'X_n\cd t'X$ para todo vector $t$.
+\end{teorema}
+
+Un vector converge en distribución si y solo si toda combinación lineal de sus componentes
+converge; es como conocer un objeto por todas sus sombras. Convierte problemas multivariados en
+problemas univariados.
+
+\subsection{Teorema central del límite}
+
+\begin{teorema}[CLT]\label{teo:clt}
+\textbf{Univariado.} Si $X_1,\dots,X_n$ son i.i.d. con media $\mu$ y varianza
+$\sigma^2<\infty$,
+\[
+\sqrt n(\bar X_n-\mu)\cd N(0,\sigma^2),\qquad
+\frac{\sqrt n(\bar X_n-\mu)}{\sigma}\cd N(0,1).
+\]
+\textbf{Multivariado.} Si son vectores i.i.d. con $\Sigma$ finita,
+$\sqrt n(\bar X_n-\mu)\cd N(0,\Sigma)$.
+\end{teorema}
+\begin{proof}[Demostración (del caso multivariado a partir del univariado)]
+Para $t$ fijo, los $t'X_i$ son escalares i.i.d. con varianza $t'\Sigma t$, así que
+$\sqrt n(t'\bar X_n-t'\mu)\cd N(0,t'\Sigma t)$, que es la distribución de $t'Z$ con
+$Z\sim N(0,\Sigma)$. Como vale para todo $t$, Cramér--Wold da el resultado.
+\end{proof}
+
+\subsubsection*{¿Por qué no mirar directamente $\bar X_n-\mu$?}
+
+Porque colapsa. Por la WLLN, $\bar X_n-\mu\cd0$: su varianza $\sigma^2/n$ se va a cero y su
+histograma se aplasta en un pico (una distribución degenerada). Eso solo repite la
+consistencia y no dice cuánto nos equivocamos con nuestro $n$.
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Lo que se mira & Límite & Qué dice \\
+\midrule
+$\bar X_n$ & $\mu$ (un pico) & Que llega a la verdad \\
+$\bar X_n-\mu$ & $0$ (un pico) & Lo mismo, dicho de otra forma \\
+$\sqrt n(\bar X_n-\mu)$ & $N(0,\sigma^2)$ & Cómo es el error: forma y tamaño \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{¿Por qué justo $\sqrt n$?}
+
+El error típico de $\bar X_n$ es $\sigma/\sqrt n$, y eso viene de la cancelación parcial de
+errores independientes (Sección \ref{sec:media}). Multiplicar por $\sqrt n$ compensa
+exactamente el encogimiento:
+$\text{desv. est.}\big(\sqrt n(\bar X_n-\mu)\big)=\sqrt n\cdot\sigma/\sqrt n=\sigma$, fija.
+Con un factor menor el error todavía colapsa; con uno mayor, explota.
+
+\begin{intuicion}[posición, escala y forma]
+Con la descomposición de la Sección \ref{sec:estandarizar},
+\[
+\bar X_n-\mu=\underbrace{\frac{\sigma}{\sqrt n}}_{\text{escala}}\times
+\underbrace{Z_n}_{\text{forma}} .
+\]
+Lo que ``se encoge'' es la escala. Multiplicar por $\sqrt n$ la neutraliza y deja visible la
+forma, que no depende de $n$. El $\sqrt n$ solo fija la escala; la \textbf{forma normal la da
+el CLT}. Media $0$ y varianza $\sigma^2$ no hacen normal a una variable; lo que la hace normal
+es su forma de campana.
+\end{intuicion}
+
+\subsubsection*{¿Por qué la forma es normal?}
+
+Una suma sale extrema solo si todos sus términos salen extremos en la misma dirección a la
+vez, lo cual es muy improbable; en cambio, hay muchísimas combinaciones que la dejan cerca
+del centro. Esa cuenta de combinaciones produce siempre la misma forma, la campana, sin
+importar la forma de cada pieza. La condición $\sigma^2<\infty$ garantiza que ninguna
+observación pueda dominar la suma; con colas demasiado pesadas (Cauchy), el CLT falla.
+
+\subsubsection*{Restar exactamente $\mu$}
+
+Restar $\mu$ no hace normal a la variable (una normal puede tener cualquier media), pero es
+necesario para que haya límite. Si restamos $c\neq\mu$,
+\[
+\sqrt n(\bar X_n-c)=\underbrace{\sqrt n(\bar X_n-\mu)}_{\cd N(0,\sigma^2)}
++\underbrace{\sqrt n(\mu-c)}_{\to\pm\infty},
+\]
+y la campana se escapa. Esto es lo que hace funcionar una prueba de hipótesis: si la nula es
+falsa, el estadístico explota y terminamos rechazando.
+
+\subsubsection*{¿Qué significa ``asintóticamente normal''?}
+
+\begin{observacion}
+$\hat\theta_n$ \textbf{no} converge a una normal: converge a la constante $\theta$ (un límite
+degenerado). Lo que converge a una normal es el error ampliado $\sqrt n(\hat\theta_n-\theta)$.
+``$\hat\theta_n$ es asintóticamente normal'' es una abreviación de esto último.
+\end{observacion}
+
+Son dos fotos del mismo estimador: sin zoom vemos \emph{a dónde llega} (un punto); con zoom
+$\sqrt n$ vemos \emph{cómo se equivoca en el camino} (una campana). Para nuestra muestra,
+des-estandarizamos, devolviendo la escala de nuestro $n$:
+\[
+\hat\theta_n\approx\theta+\frac{\sigma}{\sqrt n}Z,\quad Z\sim N(0,1)
+\qquad\Longleftrightarrow\qquad
+\hat\theta_n\approx N\Big(\theta,\frac{\sigma^2}{n}\Big).
+\]
+Esto no es un límite, es una aproximación para un $n$ dado. Su ancho es positivo para todo $n$
+finito, y ese ancho es el error estándar.
+
+\begin{observacion}[lo que el CLT no dice]
+Es una aproximación: con $n$ finito el estimador no es exactamente normal, y la aproximación
+empeora con datos muy asimétricos o de colas pesadas. No dice nada si la varianza es infinita.
+Asume i.i.d.: con datos dependientes hay versiones del CLT que requieren estacionariedad y
+sumabilidad de las autocovarianzas.
+\end{observacion}
+
+\subsection{Método delta}
+
+\textbf{El problema.} Conocemos la distribución asintótica de $\hat\theta$, pero nos interesa
+una función de él: $\theta^2$, $1/\theta$, $\log\theta$, una elasticidad, un multiplicador de
+largo plazo.
+
+\begin{intuicion}
+Cerca de $\theta$, cualquier función suave se ve como una recta de pendiente $g'(\theta)$:
+\[
+g(\hat\theta)-g(\theta)\approx g'(\theta)\,(\hat\theta-\theta).
+\]
+El error en $g$ es el error en $\theta$ multiplicado por la pendiente: si $g$ es empinada
+amplifica la incertidumbre; si es plana, la reduce. Una normal multiplicada por un número sigue
+siendo normal, y su varianza se multiplica por el cuadrado de ese número.
+\end{intuicion}
+
+\begin{teorema}[Método delta (escalar)]\label{teo:delta1}
+Si $\sqrt n(\hat\theta-\theta)\cd N(0,\sigma^2)$ y $g$ es continuamente diferenciable cerca de
+$\theta$, entonces
+\[
+\sqrt n\big(g(\hat\theta)-g(\theta)\big)\cd N\big(0,\ g'(\theta)^2\sigma^2\big).
+\]
+\end{teorema}
+
+\begin{proof}
+\begin{enumerate}
+  \item \textbf{Valor medio.} Existe $\theta^*$ entre $\hat\theta$ y $\theta$ tal que
+        $g(\hat\theta)-g(\theta)=g'(\theta^*)(\hat\theta-\theta)$. Es Taylor de orden cero con
+        resto de Lagrange: en vez de dejar un resto, la pendiente se evalúa en un punto
+        intermedio elegido para que la igualdad sea exacta.
+  \item \textbf{Multiplicar por $\sqrt n$:}
+        $\sqrt n\big(g(\hat\theta)-g(\theta)\big)=g'(\theta^*)\cdot\sqrt n(\hat\theta-\theta)$.
+  \item \textbf{Consistencia (Slutsky, primer uso).}
+        $\hat\theta-\theta=\frac1{\sqrt n}\cdot\sqrt n(\hat\theta-\theta)\cd0\cdot N=0$; como el
+        límite es constante, $\hat\theta\cp\theta$.
+  \item \textbf{El punto intermedio.} $\theta^*$ está atrapado entre $\hat\theta$ y $\theta$, así
+        que $\theta^*\cp\theta$. Como $g'$ es continua, por el CMT $g'(\theta^*)\cp g'(\theta)$.
+  \item \textbf{Slutsky, segundo uso.} $g'(\theta^*)\cp g'(\theta)$ (constante) y
+        $\sqrt n(\hat\theta-\theta)\cd N(0,\sigma^2)$, así que el producto converge a
+        $g'(\theta)N(0,\sigma^2)=N(0,g'(\theta)^2\sigma^2)$.
+\end{enumerate}
+\end{proof}
+
+Con Taylor de primer orden la prueba es análoga: $g(\hat\theta)=g(\theta)+g'(\theta)
+(\hat\theta-\theta)+R$, con $R(h)=o(|h|)$; se escribe
+$\sqrt nR=\sqrt n|\hat\theta-\theta|\cdot\frac{R}{|\hat\theta-\theta|}$, donde el primer factor
+converge en distribución y el segundo en probabilidad a cero, y Slutsky elimina el resto.
+
+\begin{ejemplos}\leavevmode
+\begin{itemize}
+  \item $g(u)=u^2$: $\sqrt n(\bar X_n^2-\mu^2)\cd N(0,4\mu^2\sigma^2)$.
+  \item $g(u)=1/u$: $\sqrt n(1/\bar X_n-1/\mu)\cd N(0,\sigma^2/\mu^4)$; el signo de la derivada
+        desaparece al elevarla al cuadrado.
+  \item $g(u)=\log u$: $\sqrt n(\log\bar X_n-\log\mu)\cd N(0,\sigma^2/\mu^2)$.
+  \item En la práctica: $\text{se}\big(g(\hat\theta)\big)\approx|g'(\hat\theta)|\,
+        \text{se}(\hat\theta)$.
+\end{itemize}
+\end{ejemplos}
+
+\begin{observacion}[el caso degenerado $g'(\theta)=0$]
+Si la pendiente es cero (un máximo o un mínimo), la varianza límite es $0$: la recta tangente es
+horizontal y no ve el error. Hay que usar Taylor de segundo orden y multiplicar por $n$ en vez
+de $\sqrt n$; el límite resulta una chi-cuadrado.
+\end{observacion}
+
+\begin{teorema}[Método delta (vectorial)]\label{teo:deltak}
+Sean $\theta\in\R^k$ y $g:\R^k\to\R^q$ continuamente diferenciable cerca de $\theta$. Si
+$\sqrt n(\hat\theta-\theta)\cd\xi\sim N(0,V)$, entonces
+\[
+\sqrt n\big(g(\hat\theta)-g(\theta)\big)\cd G'\xi\sim N(0,\ G'VG),\qquad
+G=\frac{\partial g(\theta)'}{\partial\theta}\ (k\times q).
+\]
+Equivalentemente, con la matriz jacobiana $Dg=G'$ (de $q\times k$), la varianza es
+$Dg\,V\,Dg'$.
+\end{teorema}
+
+\begin{intuicion}
+Es el caso escalar con el gradiente en lugar de la derivada y la matriz $V$ en lugar de
+$\sigma^2$. Con dos parámetros,
+$\Var(a_1\xi_1+a_2\xi_2)=a_1^2V_{11}+a_2^2V_{22}+2a_1a_2V_{12}$, que en forma matricial es
+$G'VG$. El término nuevo es la covarianza: si los estimadores están correlacionados, sus
+errores se refuerzan o se compensan.
+\end{intuicion}
+
+
+\end{document}

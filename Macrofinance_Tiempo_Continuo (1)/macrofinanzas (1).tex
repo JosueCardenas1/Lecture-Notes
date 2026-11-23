@@ -1,0 +1,983 @@
+\documentclass[11pt]{article}
+
+% ======================================================================
+%  Macrofinanzas en Tiempo Continuo — Notas de clase
+%  (Transcripción de notas manuscritas a formato lecture notes)
+% ======================================================================
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,provide=*]{babel}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage[protrusion=true,expansion=false]{microtype}
+\usepackage[colorlinks=false,pdfborder={0 0 0}]{hyperref}
+
+% ---------- Ambientes tipo lecture notes ----------
+\theoremstyle{definition}
+\newtheorem{definicion}{Definición}[section]
+\newtheorem{ejemplo}{Ejemplo}[section]
+\newtheorem{receta}{Receta}[section]
+
+\theoremstyle{remark}
+\newtheorem*{obs}{Observación}
+\newtheorem*{intuicion}{Intuición}
+
+% ---------- Resultado destacado ----------
+\newenvironment{resultado}
+  {\par\medskip\noindent\begin{minipage}{\linewidth}\rule{\linewidth}{0.4pt}\par\smallskip\noindent}
+  {\par\smallskip\noindent\rule{\linewidth}{0.4pt}\end{minipage}\medskip\par}
+
+% ---------- Macros ----------
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\dZ}{\dd Z_t}
+\newcommand{\pV}[1]{\partial_{#1} V}
+\newcommand{\aE}{a^{e}}
+\newcommand{\aH}{a^{h}}
+\newcommand{\re}{\rho^{e}}
+\newcommand{\rh}{\rho^{h}}
+\newcommand{\Ne}{N_t^{e}}
+\newcommand{\Nh}{N_t^{h}}
+\newcommand{\thke}{\theta_t^{\kappa,e}}
+\newcommand{\thkh}{\theta_t^{\kappa,h}}
+\newcommand{\vsig}{\varsigma}
+\newcommand{\sq}{\sigma_t^{q}}
+
+\allowdisplaybreaks
+
+% ---------- Portada ----------
+\title{Macrofinanzas en Tiempo Continuo\\[0.2em]
+\large Notas de clase}
+\author{Josué Cárdenas Barrantes}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+\bigskip
+
+% ======================================================================
+\section{Cálculo de Itô}
+% ======================================================================
+
+\subsection{Procesos de Itô}
+
+Un proceso de Itô está caracterizado por su \emph{drift} y su \emph{volatilidad}:
+\begin{equation}
+\dd X_t = \mu(X_t,t)\,\dd t + \sigma(X_t,t)\,\dd Z_t,
+\end{equation}
+donde $Z_t$ es un movimiento browniano (proceso de Wiener). Dos casos particulares:
+\begin{align}
+\text{Itô aritmético:}\qquad & \dd X_t = \mu_{x,t}\,\dd t + \sigma_{x,t}\,\dd Z_t,\\
+\text{Itô geométrico:}\qquad & \dd X_t = \mu_t^{x} X_t\,\dd t + \sigma_t^{x} X_t\,\dd Z_t.
+\end{align}
+Esta caracterización captura la dinámica completa de la volatilidad en el espacio de probabilidad.
+
+\begin{obs}
+En tiempo discreto las esperanzas condicionales $\E[Y\mid X]$ son difíciles de manejar. En tiempo continuo conviene pensar en un \emph{árbol binomial}: sobre un intervalo $\Delta t$ el proceso se mueve arriba o abajo, y solo eso (a diferencia del tiempo discreto).
+\end{obs}
+
+Como árbol binomial sobre $\Delta t$, el movimiento browniano toma valores
+\[
+0 \;\longrightarrow\;
+\begin{cases}
++\,\sigma\sqrt{\Delta t} & \text{(subida)}\\[2pt]
+-\,\sigma\sqrt{\Delta t} & \text{(bajada)}.
+\end{cases}
+\]
+La distribución es normal para $\dd t$, aun cuando sea sesgada para $\Delta t>0$. Es decir, \emph{hoy} la distribución no es normal, pero \emph{luego} sí lo es; la normalidad vale solo para el próximo instante, y esto se cumple únicamente si $\sigma$ es \emph{time-varying}.
+
+\subsection{Lema de Itô en notación geométrica}
+
+Para $f(X_t)$ con $X_t$ un proceso de Itô geométrico,
+\begin{equation}\label{eq:ito-geom}
+\dd f(X_t) = \left[\, f'(X_t)\,\mu_t^{x} X_t + \tfrac12 f''(X_t)\,\big(\sigma_t^{x} X_t\big)^2 \right]\dd t
++ f'(X_t)\,\sigma_t^{x} X_t\,\dd Z_t.
+\end{equation}
+
+\begin{ejemplo}[Volatilidad del SDF con utilidad CRRA]
+Sea $u(C)=\dfrac{C^{1-\gamma}-1}{1-\gamma}$, de modo que $u'(C)=C^{-\gamma}$. El factor de descuento estocástico es
+\[
+\xi_t = e^{-\rho t}\,\frac{C_t^{-\gamma}}{\underbrace{C_0^{-\gamma}}_{\text{determinístico, constante}}}
+\quad\Longrightarrow\quad
+\sigma_t^{\xi} = -\gamma\,\sigma_t^{C}.
+\]
+\end{ejemplo}
+
+\subsection{Reglas de producto y de cociente}
+
+\begin{align}
+\text{Producto:}\qquad
+\frac{\dd(X_t Y_t)}{X_t Y_t}
+&= \big(\mu_t^{x}+\mu_t^{y}+\underbrace{\sigma_t^{x}\sigma_t^{y}}_{\text{comovimiento}}\big)\dd t
++ \big(\sigma_t^{x}+\sigma_t^{y}\big)\dd Z_t, \label{eq:prod}\\[4pt]
+\text{Cociente:}\qquad
+\frac{\dd(X_t/Y_t)}{X_t/Y_t}
+&= \big[\mu_t^{x}-\mu_t^{y}+\sigma_t^{y}\big(\sigma_t^{y}-\sigma_t^{x}\big)\big]\dd t
++ \big(\sigma_t^{x}-\sigma_t^{y}\big)\dd Z_t. \label{eq:coc}
+\end{align}
+
+% ======================================================================
+\section{Elección de consumo--portafolio de un agente}
+% ======================================================================
+
+\subsection{El problema}
+
+El agente elige consumo $\{C_t\}_{t\ge0}$ y pesos de portafolio $\{\theta_t\}_{t\ge0}$ para maximizar
+\begin{equation}
+\E\!\left[\int_0^\infty e^{-\rho t}\,u(C_t)\,\dd t\right],
+\qquad u(C)=\frac{C^{1-\gamma}-1}{1-\gamma},
+\end{equation}
+sujeto a la evolución del patrimonio
+\begin{equation}\label{eq:budget}
+\forall t>0:\qquad \dd n_t = -C_t\,\dd t + n_t\big[\theta_t r_t\,\dd t + (1-\theta)\,\dd r_t^{a}\big],
+\end{equation}
+y a la restricción de solvencia $n_t\ge 0$.
+
+\medskip
+Aquí $r_t$ es la tasa libre de riesgo y $\dd r_t^{a}$ el retorno del activo riesgoso, con prima de riesgo $\delta_t^{a}$:
+\begin{equation}
+\dd r_t^{a} = (r_t+\delta_t^{a})\,\dd t + \sigma_t^{a}\,\dd Z_t.
+\end{equation}
+El agente toma precios y retornos como dados (equilibrio parcial). Un retorno es el cambio (porcentual) del precio en el tiempo.
+
+\medskip
+Suponemos que los retornos son función de una variable de estado $\eta_t$:
+\[
+r_t = r(\eta_t),\qquad \delta_t^{a}=\delta^{a}(\eta_t),\qquad \sigma_t^{a}=\sigma^{a}(\eta_t),
+\]
+y que $\eta_t$ evoluciona según el proceso de difusión (estocástico)
+\begin{equation}
+\dd\eta_t = \mu_t^{\eta}(\eta_t)\,\eta_t\,\dd t + \sigma_t^{\eta}(\eta_t)\,\eta_t\,\dd Z_t,
+\qquad \eta_0 \text{ dado.}
+\end{equation}
+
+\begin{obs}[Formas funcionales de referencia]
+\[
+\mu^{\eta}\eta=\mu_\eta=-\phi\,\eta,\qquad
+\sigma_\eta(\eta)=\sigma\,(1-\eta^2),
+\]
+\[
+r(\eta)=r^{0}+r^{1}\eta,\qquad
+\delta^{a}(\eta)=\delta^{0}-\delta^{1}\eta,\qquad
+\sigma^{a}(\eta)=\sigma^{0}-\sigma^{1}\eta.
+\]
+\end{obs}
+
+\subsection{Método de control estocástico: la ecuación HJB}
+
+La ecuación de Hamilton--Jacobi--Bellman (HJB) es la versión en tiempo continuo de la ecuación de Bellman. Requiere una formulación markoviana con espacio de estados explícito ($V(\cdot)$ vs.\ $V_t(\cdot)$); se resuelve la función valor $V(n,\eta)$.
+
+\begin{definicion}[Función valor y principio de optimalidad]
+Sea $A(n,\eta)$ el conjunto de elecciones admisibles $\{C_t,\theta_t\}_{t\ge0}$ dadas las condiciones iniciales $\eta_0=\eta$, $n_0=n$; y sea $A_T(n,\eta)$ el conjunto de políticas $\{C_t,\theta_t\}_{t\in[0,T]}$ sobre $[0,T]$ con extensiones admisibles a $[0,\infty)$, de modo que $A_T(n,\eta)\subset A(n,\eta)$. La función valor del problema de decisión es
+\begin{equation}
+V(n,\eta):=\max_{\{\theta_t,C_t\}_{t\ge0}\in A(n,\eta)}\ \E_t\!\left[\int_0^\infty e^{-\rho t}u(C_t)\,\dd t\right].
+\end{equation}
+Es inmediato que $V$ satisface el principio de optimalidad de Bellman para todo $T>0$.
+\end{definicion}
+
+\paragraph{Derivación de la HJB desde Bellman.}
+Con paso $\Delta t$,
+\[
+V(n_t,\eta_t)=\max_{C_t,\theta_t}\Big\{u(C_t)\,\Delta t + e^{-\rho\Delta t}\,\E_t\big[V(n_{t+\Delta t},\eta_{t+\Delta t})\big]\Big\}.
+\]
+Restando $e^{-\rho\Delta t}V(n_t,\eta_t)$ y dividiendo entre $\Delta t$,
+\[
+\underbrace{\frac{1-e^{-\rho\Delta t}}{\Delta t}}_{\to\ \rho}\,V(n_t,\eta_t)\,\Delta t
+=\max_{C_t,\theta_t}\Big\{u(C_t)\,\Delta t + e^{-\rho\Delta t}\,\E_t\big[V(n_{t+\Delta t},\eta_{t+\Delta t})-V(n_t,\eta_t)\big]\Big\}.
+\]
+Cuando $\Delta t\to 0$, $e^{-\rho\Delta t}\to 1$ y
+\[
+\E_t\big[V(n_{t+\Delta t},\eta_{t+\Delta t})-V(n_t,\eta_t)\big]=\E_t[\Delta V],
+\qquad
+\lim_{\Delta t\to 0}\frac{\E_t[\Delta V]}{\Delta t}=\frac{\E[\dd V_t]}{\dd t}.
+\]
+Obtenemos la HJB estocástica:
+\begin{equation}\label{eq:hjb-abstract}
+\boxed{\ \rho\,V(n_t,\eta_t)\,\dd t=\max_{C_t,\theta_t}\big\{u(C_t)\,\dd t+\E_t[\dd V_t]\big\}.\ }
+\end{equation}
+
+\paragraph{Expansión de $\dd V_t$ por Itô.}
+Con $V_t=V(n_t,\eta_t)$ función de dos procesos,
+\[
+\dd n_t=\mu_n\,\dd t+\sigma_n\,\dd Z_t,\qquad \dd\eta_t=\mu_\eta\,\dd t+\sigma_\eta\,\dd Z_t,
+\]
+la expansión de $V(n_t+\dd n_t,\eta_t+\dd\eta_t)$ alrededor de $(n_t,\eta_t)$ da
+\[
+\dd V=\pV{n}\,\dd n+\pV{\eta}\,\dd\eta
++\tfrac12\pV{nn}(\dd n)^2+\tfrac12\pV{\eta\eta}(\dd\eta)^2+\pV{n\eta}(\dd n)(\dd\eta).
+\]
+Usando las reglas de multiplicación $(\dd Z_t)^2=\dd t$, $\dd t\,\dd Z_t=0$, $(\dd t)^2=0$:
+\begin{align*}
+(\dd n)^2 &= (\mu_n\dd t+\sigma_n\dd Z_t)^2=\sigma_n^2\,\dd t,\\
+(\dd\eta)^2 &= \sigma_\eta^2\,\dd t,\\
+(\dd n)(\dd\eta) &= (\mu_n\dd t+\sigma_n\dd Z_t)(\mu_\eta\dd t+\sigma_\eta\dd Z_t)=\sigma_n\sigma_\eta\,\dd t.
+\end{align*}
+Sustituyendo y agrupando,
+\[
+\dd V=\Big[\pV{n}\mu_n+\pV{\eta}\mu_\eta+\tfrac12\pV{nn}\sigma_n^2+\tfrac12\pV{\eta\eta}\sigma_\eta^2+\pV{n\eta}\sigma_n\sigma_\eta\Big]\dd t
++\big[\pV{n}\sigma_n+\pV{\eta}\sigma_\eta\big]\dd Z_t.
+\]
+Como $\E[\dd Z]=0$,
+\begin{equation}\label{eq:EdV}
+\E_t[\dd V_t]=\Big[\pV{n}\mu_n+\pV{\eta}\mu_\eta+\tfrac12\pV{nn}\sigma_n^2+\tfrac12\pV{\eta\eta}\sigma_\eta^2+\pV{n\eta}\sigma_n\sigma_\eta\Big]\dd t.
+\end{equation}
+
+\paragraph{HJB en su forma explícita.} Sustituyendo \eqref{eq:EdV} en \eqref{eq:hjb-abstract},
+\begin{equation}
+\rho V(n,\eta)=\max_{C,\theta}\Big\{u(C)+\pV{n}\mu_n+\pV{\eta}\mu_\eta
++\tfrac12\pV{nn}\sigma_n^2+\tfrac12\pV{\eta\eta}\sigma_\eta^2+\pV{n\eta}\sigma_n\sigma_\eta\Big\},
+\end{equation}
+con
+\[
+\mu_n=-C+n\big[r(\eta)+(1-\theta)\delta^{a}(\eta)\big],\quad
+\sigma_n=n(1-\theta)\sigma^{a}(\eta),\quad
+\mu_\eta=\mu_\eta(\eta),\quad \sigma_\eta=\sigma_\eta(\eta).
+\]
+Explícitamente,
+\begin{multline}\label{eq:hjb-full}
+\rho V=\max_{C,\theta}\Big\{u(C)+\pV{n}\big[-C+n\big(r(\eta)+(1-\theta)\delta^{a}(\eta)\big)\big]+\pV{\eta}\mu_\eta(\eta)\\
++\tfrac12\pV{nn}\underbrace{n^2(1-\theta)^2(\sigma^{a})^2}_{\sigma_n^2}
++\tfrac12\pV{\eta\eta}\sigma_\eta^2
++\pV{n\eta}\underbrace{n(1-\theta)\sigma^{a}\sigma_\eta}_{\sigma_n\sigma_\eta}\Big\}.
+\end{multline}
+
+\subsection{Condiciones de primer orden}
+
+Las variables de control son $C$ y $\theta$.
+
+\paragraph{FOC respecto a $C$.}
+\[
+\frac{\partial}{\partial C}\big[u(C)-\pV{n}\,C\big]=0
+\ \xRightarrow{\ \text{CRRA}\ }\ u'(C^*)=\pV{n}
+\ \Longrightarrow\ C^{*}=(\pV{n})^{-1/\gamma}.
+\]
+
+\paragraph{FOC respecto a $\theta$.} Llamando $\phi\equiv 1-\theta$,
+\[
+\pV{n}\,n\,\delta^{a}+\pV{nn}\,n^2\phi^*(\sigma^{a})^2+\pV{n\eta}\,n\,\sigma^{a}\sigma_\eta=0,
+\]
+de donde
+\[
+\pV{nn}\,n^2\phi^*(\sigma^{a})^2=-\pV{n\eta}\,n\,\sigma^{a}\sigma_\eta-\pV{n}\,n\,\delta^{a},
+\]
+y por tanto
+\begin{equation}\label{eq:portfolio-general}
+1-\theta
+=\underbrace{-\frac{\pV{n\eta}\,\sigma_\eta}{\pV{nn}\,n\,\sigma^{a}}}_{\text{demanda por cobertura}}
+\ \underbrace{-\frac{\pV{n}\,\delta^{a}}{\pV{nn}\,n\,(\sigma^{a})^2}}_{\text{demanda miope}}.
+\end{equation}
+
+\subsection{Caso de retornos constantes}
+
+Para hallar el \emph{guess}, definimos primero el caso de retornos constantes: $r_t=r$, $\delta^{a}$, $\sigma^{a}$ fijos. El estado externo desaparece y la HJB se reduce a
+\begin{equation}
+\rho V(n)=\max_C\big[u(C)-V'(n)C\big]
++\max_\theta\Big[V'(n)n\big(r+(1-\theta)\delta^{a}\big)+\tfrac12 V''(n)n^2\big((1-\theta)\sigma^{a}\big)^2\Big].
+\end{equation}
+
+\paragraph{FOC sobre $C$.}
+\[
+\frac{\partial}{\partial C}\big[u(C)-V'(n)C\big]=0\ \Longrightarrow\ u'(C^*)=V'(n).
+\]
+
+\paragraph{FOC sobre $\theta$.}
+\[
+\frac{\partial}{\partial\theta}\Big[V'(n)n(1-\theta)\delta^{a}+\tfrac12 V''(n)n^2(1-\theta)^2(\sigma^{a})^2\Big]=0,
+\]
+\[
+-V'(n)n\,\delta^{a}+V''(n)n^2(1-\theta^*)(\sigma^{a})^2\underbrace{(-1)(-1)}_{=1}=0,
+\]
+\begin{equation}\label{eq:mvpc}
+1-\theta=-\frac{V'(n)}{V''(n)n}\cdot\frac{\delta^{a}}{(\sigma^{a})^2}
+=\Big(\underbrace{-\frac{V''(n)n}{V'(n)}}_{\text{aversión relativa al riesgo (Arrow--Pratt)}}\Big)^{-1}\frac{\delta^{a}}{(\sigma^{a})^2}.
+\end{equation}
+Ésta es la elección de portafolio \emph{media--varianza}.
+
+\subsection{El \emph{guess} de la función valor}
+
+\begin{intuicion}
+La restricción de \emph{net worth} es lineal en $n$ y la utilidad es homogénea de grado $1-\gamma$ en $c$:
+\[
+u(\lambda C)=\frac{(\lambda C)^{1-\gamma}-1}{1-\gamma}=\lambda^{1-\gamma}\frac{C^{1-\gamma}}{1-\gamma}-\frac{1}{1-\gamma}.
+\]
+Luego $V$ es homogénea de grado $1-\gamma$ en $n$ más una constante: $V(n)=A\,n^{1-\gamma}+B$.
+\end{intuicion}
+
+Postulamos
+\begin{equation}\label{eq:guess}
+V(n)=\frac{u(\omega n)}{\rho}=\frac{(\omega n)^{1-\gamma}-1}{\rho(1-\gamma)},
+\qquad
+A=\frac{\omega^{1-\gamma}}{\rho(1-\gamma)},\quad B=\frac{-1}{\rho(1-\gamma)},
+\end{equation}
+donde $\omega$ es el \emph{multiplicador de riqueza}. Con retornos time-varying, $\omega=\omega(\eta)$ es función del estado.
+
+\paragraph{Caso $\gamma=1$ (utilidad log).}
+\[
+V(n)=\frac{\log(\omega n)}{\rho}=\frac{\log\omega+\log n}{\rho},
+\qquad V'(n)=\frac{1}{\rho n},\quad V''(n)=-\frac{1}{\rho n^2}.
+\]
+Controles óptimos: $C^*=\rho n$ y $1-\theta^*=\dfrac{\delta^{a}}{(\sigma^{a})^2}$. Sustituyendo en la HJB,
+\[
+\log\omega+\log n=\log\rho+\log n-1+\frac{1}{\rho}\Big(r+\frac{1}{2\gamma}\Big(\frac{\delta^{a}}{\sigma^{a}}\Big)^2\Big),
+\]
+\begin{equation}
+\boxed{\ \log\omega=\log\rho-1+\frac{1}{\rho}\Big(r+\frac{1}{2\gamma}\Big(\frac{\delta^{a}}{\sigma^{a}}\Big)^2\Big).\ }
+\end{equation}
+
+\paragraph{Caso $\gamma\neq1$.}
+Con $V(n)=(\omega n)^{1-\gamma}/[\rho(1-\gamma)]$,
+\[
+V'(n)=\frac{(\omega n)^{-\gamma}\omega}{\rho},\qquad
+V''(n)=\frac{-\gamma(\omega n)^{-\gamma-1}\omega^2}{\rho}.
+\]
+Consumo: $C^{-\gamma}=V'(n)\Rightarrow C^{*}=\rho^{1/\gamma}\omega^{1-1/\gamma}n$. La aversión relativa al riesgo es
+\[
+-\frac{V''(n)n}{V'(n)}=\frac{-\gamma(\omega n)^{-\gamma-1}\omega^2 n/\rho}{(\omega n)^{-\gamma}\omega/\rho}=\gamma,
+\qquad\text{de modo que}\qquad
+1-\theta=\frac{1}{\gamma}\frac{\delta^{a}}{(\sigma^{a})^2}.
+\]
+
+\paragraph{Verificación (guess-and-verify).}
+El lado izquierdo de la HJB es
+\[
+\rho V(n)=\rho\cdot\frac{(\omega n)^{1-\gamma}-1}{\rho(1-\gamma)}=\frac{(\omega n)^{1-\gamma}-1}{1-\gamma}.
+\]
+Definiendo $\tilde n\equiv\omega n$ (así $n=\tilde n/\omega$, $n^{1-\gamma}=\tilde n^{1-\gamma}/\omega^{1-\gamma}$) y usando $(1-1/\gamma)(1-\gamma)=-\tfrac{(1-\gamma)^2}{\gamma}$, tras evaluar cada término del RHS:
+\begin{align*}
+u(C^*)-V'(n)C^* &= \frac{\tilde n^{1-\gamma}}{\rho}\cdot\frac{\gamma\,\rho^{1/\gamma}\omega^{-1/\gamma}}{1-\gamma}-\frac{1}{1-\gamma},\\
+V'(n)\,n\,r &= \frac{\tilde n^{1-\gamma}}{\rho}\,r,\\
+V'(n)\,n\,(1-\theta)\delta^{a} &= \frac{\tilde n^{1-\gamma}}{\rho}\cdot\frac{(\delta^{a})^2}{\gamma(\sigma^{a})^2},\\
+\tfrac12 V''(n)n^2(1-\theta)^2(\sigma^{a})^2 &= -\frac{\tilde n^{1-\gamma}}{\rho}\cdot\frac{(\delta^{a})^2}{2\gamma(\sigma^{a})^2}.
+\end{align*}
+Sumando e igualando con el LHS,
+\[
+\frac{\tilde n^{1-\gamma}-1}{1-\gamma}
+=\frac{\tilde n^{1-\gamma}}{\rho}\Big[\frac{\gamma\rho^{1/\gamma}\omega^{-1/\gamma}}{1-\gamma}+r+\frac{(\delta^{a})^2}{2\gamma(\sigma^{a})^2}\Big]-\frac{1}{1-\gamma}.
+\]
+Cancelando $-\tfrac{1}{1-\gamma}$ y $\tilde n^{1-\gamma}$, y multiplicando por $\rho(1-\gamma)$:
+\begin{resultado}
+\begin{equation}\label{eq:rho-omega}
+\rho=\gamma\,\rho^{1/\gamma}\omega^{-1/\gamma}+(1-\gamma)\Big[r+\frac{1}{2\gamma}\Big(\frac{\delta^{a}}{\sigma^{a}}\Big)^2\Big],
+\end{equation}
+que despejando ($\gamma\neq 1$) entrega la constante $\omega$ de la función valor:
+\begin{equation}\label{eq:omega-closed}
+\omega=\rho\left(1+\frac{\gamma-1}{\gamma}\cdot\frac{1}{\rho}\Big(r-\rho+\frac{1}{2\gamma}\Big(\frac{\delta^{a}}{\sigma^{a}}\Big)^2\Big)\right)^{\!\frac{\gamma}{\gamma-1}}.
+\end{equation}
+\end{resultado}
+
+\subsection{Retornos variantes: consumo, portafolio y demanda por cobertura}
+
+Con $V(n)=u(\omega n)/\rho$ las elecciones óptimas son
+\[
+\begin{cases}
+c(n)=\rho^{1/\gamma}\omega^{1-1/\gamma}\,n,\\[3pt]
+1-\theta=\dfrac{1}{\gamma}\dfrac{\delta^{a}}{(\sigma^{a})^2},
+\end{cases}
+\qquad\Longrightarrow\qquad
+\frac{C_t}{n_t}=\rho^{1/\gamma}\omega_t^{\,1-1/\gamma}.
+\]
+
+\paragraph{Reacción del ratio $C_t/n_t$ a las oportunidades de inversión ($\psi=1/\gamma$).}
+\begin{itemize}[leftmargin=2.2em]
+\item $\psi<1$ ($\gamma>1$): consumo $\uparrow$, ahorro $\downarrow$ — domina el efecto ingreso sobre el efecto sustitución.
+\item $\psi>1$ ($\gamma<1$): consumo $\downarrow$, ahorro $\uparrow$ — domina el efecto sustitución.
+\item $\psi=1$: el ratio consumo--riqueza es independiente de las oportunidades de inversión.
+\end{itemize}
+
+\begin{intuicion}
+\emph{Efecto ingreso:} mejores oportunidades de inversión (mayor $\omega$) hacen al inversor más rico y éste responde aumentando el consumo en todos los períodos.
+\emph{Efecto sustitución:} mejores oportunidades hacen el ahorro más atractivo y el consumidor reduce su consumo hoy para tener mayor consumo luego.
+\end{intuicion}
+
+\paragraph{HJB con retornos variantes.} Combinando las ecuaciones,
+\begin{multline}\label{eq:hjb-tv}
+\rho V(n,\eta)=\max_C\big(u(C)-\pV{n}(n,\eta)\,C\big)
++\max_\theta\Big\{\pV{n}(n,\eta)\,n\big(r(\eta)+(1-\theta)\delta^{a}(\eta)\big)\\
++\big(\tfrac12\pV{nn}(n,\eta)\,n(1-\theta)\sigma^{a}(\eta)+\pV{\eta n}(n,\eta)\sigma_\eta(\eta)\big)n(1-\theta)\sigma^{a}(\eta)\Big\}\\
++\pV{\eta}(n,\eta)\mu_\eta(\eta)+\tfrac12\pV{\eta\eta}(n,\eta)\big(\sigma_\eta(\eta)\big)^2.
+\end{multline}
+Esto se resuelve numéricamente para $V$, o imponiendo el guess $V(n,\eta)=\dfrac{u(\omega(\eta)n)}{\rho}$ y reduciéndolo a una EDO unidimensional para $\omega(\eta)$. El consumo óptimo es
+\[
+C(n,\eta)=\rho^{1/\gamma}\big(\omega(\eta)\big)^{1-1/\gamma}n,
+\]
+con $\omega(\eta)$ dependiente del estado, y el portafolio óptimo
+\begin{equation}\label{eq:portfolio-hedge}
+1-\theta(n,\eta)=\underbrace{\frac{1}{\gamma}\frac{\delta^{a}(\eta)}{(\sigma^{a}(\eta))^2}}_{\text{demanda miope}}
++\underbrace{\frac{1-\gamma}{\gamma}\cdot\frac{\tfrac{\omega'(\eta)}{\omega(\eta)}\sigma_\eta(\eta)\sigma^{a}(\eta)}{(\sigma^{a}(\eta))^2}}_{\text{demanda por cobertura}}.
+\end{equation}
+El término de cobertura depende de la covarianza $\sigma^{\omega}\sigma^{a}$ de las oportunidades de inversión con el retorno de los activos.
+
+\begin{intuicion}
+La demanda por cobertura responde a dos motivos opuestos: (i) \emph{oportunidades buenas} — se quieren recursos en esa situación (alto $\omega(\eta)$), comprando activos que suben cuando las oportunidades son buenas; (ii) \emph{oportunidades malas} — comprar activos que suben cuando las oportunidades serán malas. Se tiene:
+\[
+\gamma<1\Rightarrow\text{domina motivo 1 (poco averso al riesgo)},\quad
+\gamma>1\Rightarrow\text{domina motivo 2 (muy averso)},
+\]
+\[
+\gamma=1\Rightarrow\text{se cancelan y el agente actúa miópicamente.}
+\]
+Si $\gamma\to\infty$ el agente es infinitamente averso al riesgo y $\tfrac{1}{\gamma}\tfrac{\delta^{a}}{(\sigma^{a})^2}\to0$ (pues $1/\gamma\to0$).
+\end{intuicion}
+
+% ======================================================================
+\section{El Principio del Máximo Estocástico (Hamiltoniano)}
+% ======================================================================
+
+El Principio del Máximo Estocástico entrega condiciones que caracterizan la \emph{trayectoria} de la solución óptima (a diferencia de toda la función valor). Está más cerca de la ecuación de Euler de tiempo discreto que de Bellman, y no requiere estructura markoviana; se postula (resuelve) una variable de co-estado $\xi_t^{i}$.
+
+\begin{obs}[Método de la martingala]
+Es un atajo muy general para el problema de elección de portafolio; produce ecuaciones interpretables. Se postula el proceso del SDF: $\dd\xi_t^{i}/\xi_t^{i}$.
+\end{obs}
+
+\subsection{El Hamiltoniano y la variable de co-estado}
+
+\begin{equation}
+H_t^{i}=\underbrace{e^{-\rho t}\frac{(C_t^{i})^{1-\gamma}}{1-\gamma}}_{\text{utilidad}}
++\underbrace{\xi_t^{i}\,n_t^{i}\,\mu_t^{n^{i}}}_{\text{drift}}
++\underbrace{\sigma_{\xi_t^{i}}\,n_t^{i}\,\sigma_t^{n^{i}}}_{\text{costo del riesgo}}
+\end{equation}
+que, expandido con la restricción presupuestaria,
+\[
+H_t^{i}=e^{-\rho t}\frac{(C_t^{i})^{1-\gamma}}{1-\gamma}
++\xi_t^{i}\Big[-C_t^{i}+n_t^{i}(1-\theta_t^{i})(r_t+\delta_t^{a})+n_t^{i}\theta_t^{i}r_t
++\frac{\sigma_{\xi_t^{i}}n_t^{i}(1-\theta_t^{i})}{\xi_t^{i}}\sigma_t^{r^{a}}\Big].
+\]
+
+\begin{itemize}[leftmargin=2.2em]
+\item $\xi_t^{i}$ es la \emph{variable de co-estado}: tiene el rol del multiplicador de Lagrange dinámico en la evolución del estado $n_t^{i}$.
+\item $\sigma_{\xi_t^{i}}$ es la volatilidad del co-estado.
+\end{itemize}
+
+\subsection{Condiciones de primer orden}
+
+\paragraph{FOC respecto a $C_t^{i}$.}
+\begin{equation}
+e^{-\rho t}(C_t^{i})^{-\gamma}-\xi_t^{i}=0
+\quad\Longrightarrow\quad
+e^{-\rho t}(C_t^{i})^{-\gamma}=\xi_t^{i}.
+\end{equation}
+
+\paragraph{FOC respecto a $\theta_t^{i}$.}
+\[
+\xi_t^{i}n_t^{i}\delta_t^{a}+\sigma_{\xi_t^{i}}n_t^{i}\sigma_t^{a}=0
+\quad\Longrightarrow\quad
+\delta_t^{a}=-\frac{\sigma_{\xi_t^{i}}}{\xi_t^{i}}\sigma_t^{a}.
+\]
+Definiendo el \emph{precio del riesgo} $\vsig_t^{i}:=-\sigma_{\xi_t^{i}}/\xi_t^{i}$,
+\begin{equation}\label{eq:price-risk}
+\boxed{\ \delta_t^{a}=\vsig_t^{i}\,\sigma_t^{a}.\ }
+\end{equation}
+
+\subsection{La ecuación de co-estado}
+
+Por el Principio del Máximo, la co-variable satisface
+\begin{equation}
+\dd\xi_t^{i}=-\frac{\partial H}{\partial n_t^{i}}\,\dd t+\sigma_{\xi_t^{i}}\,\dd Z_t,
+\end{equation}
+que es la evolución del \emph{precio sombra} de la riqueza. Diferenciando $H$ respecto a $n_t^{i}$,
+\[
+\frac{\partial H_t^{i}}{\partial n_t^{i}}
+=\xi_t^{i}\big[(1-\theta_t^{i})(r_t+\delta_t^{a})+\theta_t^{i}r_t\big]+\sigma_{\xi_t^{i}}(1-\theta_t^{i})\sigma_t^{a}
+=\xi_t^{i}\big[r_t+(1-\theta_t^{i})\delta_t^{a}\big]+\sigma_{\xi_t^{i}}(1-\theta_t^{i})\sigma_t^{a}.
+\]
+Usando $\sigma_{\xi_t^{i}}=-\xi_t^{i}\vsig_t^{i}$,
+\[
+\frac{\partial H_t^{i}}{\partial n_t^{i}}
+=\xi_t^{i}\Big[r_t+(1-\theta_t^{i})\underbrace{(\delta_t^{a}-\vsig_t^{i}\sigma_t^{a})}_{0\ \text{por FOC portafolio}}\Big]=\xi_t^{i}r_t.
+\]
+Por tanto,
+\begin{equation}\label{eq:costate}
+\dd\xi_t^{i}=-\xi_t^{i}r_t\,\dd t+\sigma_{\xi_t^{i}}\,\dd Z_t
+\quad\Longrightarrow\quad
+\frac{\dd\xi_t^{i}}{\xi_t^{i}}=-r_t\,\dd t-\vsig_t^{i}\,\dd Z_t,
+\qquad
+\frac{\E_t[\dd\xi_t^{i}]}{\xi_t^{i}}=-r\,\dd t.
+\end{equation}
+
+\subsection{Conexión con la ecuación de Euler}
+
+De la FOC de consumo,
+\[
+\frac{\E_t\big[\dd\big(e^{-\rho t}(C_t^{i})^{-\gamma}\big)\big]}{e^{-\rho t}(C_t^{i})^{-\gamma}}=-r_t\,\dd t.
+\]
+Como $e^{-\rho t}$ aporta $-\rho\,\dd t$,
+\begin{equation}
+\frac{\E\big[\dd(C_t^{i})^{-\gamma}\big]}{(C_t^{i})^{-\gamma}}=(\rho-r_t)\,\dd t
+\quad\Longleftrightarrow\quad
+\frac{\E\big[\dd(C_t^{-\gamma})\big]}{C_t^{-\gamma}\,\dd t}=\rho-r_t.
+\end{equation}
+
+\subsection{Equivalencia HJB $\Leftrightarrow$ Hamiltoniano}
+
+Postulamos $\xi_t^{i}=\xi_t^{i}(t,n_t^{i},\eta_t)$, función del tiempo y de los estados. Por Itô,
+\[
+\dd\xi_t=\partial_t\xi_t\,\dd t+\partial_n\xi_t\,\dd n_t^{i}+\partial_\eta\xi_t^{i}\,\dd\eta_t
++\tfrac12\partial_{nn}\xi(\dd n_t^{i})^2+\tfrac12\partial_{\eta\eta}\xi_t(\dd\eta_t)^2+\partial_{n\eta}\xi(\dd n_t^{i})(\dd\eta_t).
+\]
+Queremos probar que $\xi_t(t,n,\eta)=e^{-\rho t}V'(n,\eta)$. Partimos de la HJB (caso de retornos constantes):
+\[
+\rho V(n)=u(C^*)+V'(n)\big(-C^*+n(r+(1-\theta)\delta^{a})\big)+\tfrac12 V''(n)n^2\big((1-\theta^*)\sigma^{a}\big)^2.
+\]
+Derivando respecto a $n$ y multiplicando por $e^{-\rho t}$ (ignorando la dependencia de $C^*,\theta^*$ en $n$ por el Teorema de la Envolvente), con $\xi(t,n)=e^{-\rho t}V'(n)$, $\partial_t\xi=-\rho\xi$, $\partial_n\xi=e^{-\rho t}V''(n)$, $\partial_{nn}\xi=e^{-\rho t}V'''(n)$, se obtiene
+\[
+-\partial_t\xi=\partial_n\xi\big(-C^*+n(r+(1-\theta)\delta^{a})\big)+\tfrac12\partial_{nn}\xi\,n^2\big((1-\theta)\sigma^{a}\big)^2
++\xi\big(r+(1-\theta^*)\delta^{a}\big)+\partial_n\xi\,n\big((1-\theta)\sigma^{a}\big)^2.
+\]
+Los últimos dos términos se reescriben usando la volatilidad de $\xi_t$: aplicando Itô a $\xi_t=\xi(t,n_t)$,
+\[
+\sigma_{\xi_t}=\partial_n\xi\cdot\sigma_{n_t}=\partial_n\xi\,n(1-\theta^*)\sigma^{a},
+\qquad
+\vsig_t=-\frac{\sigma_{\xi_t}}{\xi_t}\ \Rightarrow\ \sigma_{\xi_t}=-\vsig_t\xi_t,
+\]
+de modo que $\partial_n\xi\,n(1-\theta^*)\sigma^{a}=-\vsig\xi$. Entonces
+\[
+\xi r+\xi(1-\theta^*)\delta^{a}+(-\vsig\xi)(1-\theta^*)\sigma^{a}
+=\xi r+\xi(1-\theta^*)\underbrace{(\delta^{a}-\vsig\sigma^{a})}_{0:\ \text{FOC portafolio}}=\xi r.
+\]
+\begin{resultado}
+Se llega a la EDP de la co-variable $\xi$:
+\begin{equation}\label{eq:pde-xi}
+0=r\xi+\partial_t\xi+\partial_n\xi\,\mu_{n_t}+\tfrac12\partial_{nn}\xi\,\sigma_{n_t}^2,
+\end{equation}
+verificando la relación entre HJB y Hamiltoniano:
+\begin{equation}
+\xi(t,n)=e^{-\rho t}V'(n).
+\end{equation}
+\end{resultado}
+
+\subsection{Verificación con un guess del SDF}
+
+Como en retornos constantes $V(n)=u(\omega n)/\rho$, se sugiere el guess
+\[
+\xi_t=\underbrace{e^{-\rho t}}_{A_t}\cdot\underbrace{\frac{\omega^{1-\gamma}}{\rho}\,n_t^{-\gamma}}_{B_t}
+=e^{-\rho t}\frac{\omega}{\rho}\,u'(\omega n_t),
+\]
+lo que implica $C_t^{i}=\rho^{1/\gamma}\omega^{1-1/\gamma}n_t^{i}$ y $1-\theta=\tfrac{1}{\gamma}\tfrac{\delta^{a}}{(\sigma^{a})^2}$. Por la regla del producto,
+\[
+\frac{\dd(A_tB_t)}{A_tB_t}=\frac{\dd A_t}{A_t}+\frac{\dd B_t}{B_t}+\underbrace{\frac{\dd A_t}{A_t}\frac{\dd B_t}{B_t}}_{0},
+\qquad
+\frac{\dd A_t}{A_t}=-\rho\,\dd t,\quad
+\frac{\dd B_t}{B_t}=\frac{\dd(n_t^{-\gamma})}{n_t^{-\gamma}}.
+\]
+Con $f(n)=n^{-\gamma}$, $f'(n)=-\gamma n^{-\gamma-1}$, $f''(n)=\gamma(\gamma+1)n^{-\gamma-2}$, y $(\dd n_t)^2=\sigma_{n_t}^2\dd t$,
+\[
+\dd(n_t^{-\gamma})=-\gamma n_t^{-\gamma-1}\mu_{n_t}\dd t-\gamma n_t^{-\gamma-1}\sigma_{n_t}\dd Z_t
++\tfrac12\gamma(\gamma+1)n_t^{-\gamma-2}\sigma_{n_t}^2\dd t.
+\]
+Usando $n_t^{-\gamma-1}=n_t^{-\gamma}\,n_t^{-1}$ y $n_t^{-\gamma-2}=n_t^{-\gamma}\,n_t^{-2}$,
+\[
+\frac{\dd(n_t^{-\gamma})}{n_t^{-\gamma}}
+=\Big(-\gamma\frac{\mu_{n_t}}{n_t}+\frac{\gamma(\gamma+1)}{2}\frac{\sigma_{n_t}^2}{n_t^2}\Big)\dd t-\gamma\frac{\sigma_{n_t}}{n_t}\dd Z_t.
+\]
+Definiendo $\mu_t^{n}=\mu_{n_t}/n_t$ y $\sigma_t^{n}=\sigma_{n_t}/n_t$,
+\begin{resultado}
+\begin{equation}\label{eq:sdf-process}
+\frac{\dd\xi_t}{\xi_t}=\Big(-\rho-\gamma\mu_t^{n}+\frac{\gamma(\gamma+1)}{2}(\sigma_t^{n})^2\Big)\dd t-\gamma\,\sigma_t^{n}\,\dd Z_t.
+\end{equation}
+\end{resultado}
+
+% ======================================================================
+\section{Modelo de macrofinanzas de dos sectores}
+% ======================================================================
+
+\subsection{Estructura del modelo}
+
+Hay dos sectores. Los balances son:
+\begin{center}
+\begin{tabular}{p{0.42\linewidth}p{0.42\linewidth}}
+\textbf{Sector de Expertos (Farmers)} & \textbf{Sector de Hogares (Gatherers)}\\[2pt]
+Activos: Capital \;/\; Pasivos: Deuda + Net Worth $N_t^{e}$ &
+Activos: Préstamos + Capital $\kappa_t^{h}q_tK_t$ \;/\; Pasivos: Net Worth $N_t^{h}$
+\end{tabular}
+\end{center}
+
+\paragraph{Proporción de capital.} $\kappa_t^{e}$ (expertos) y $\kappa_t^{h}$ (hogares), con $\kappa_t^{e}+\kappa_t^{h}=1$, $\kappa_t^{e},\kappa_t^{h}\ge0$.
+
+\paragraph{Producción.} Los expertos producen con función lineal $\aE\kappa_t^{e}$ (i.e.\ $\aE\kappa_t^{e}K_t$). Los hogares producen $\aH(\kappa_t^{h})\kappa_t^{h}$, función de $\kappa_t^{h}$, con productividad $\aH(\kappa^{h})\le\aE$ (igualdad para $\kappa^{h}=0$) y decreciente en $\kappa^{h}$.
+
+\paragraph{Fricción financiera.} Los expertos pueden emitir deuda con restricción de colateral $D_t^{e}\le\ell\,\kappa_t^{e}q_tK_t$, equivalentemente
+\begin{equation}
+\frac{D_t^{e}}{N_t^{e}}\le\ell\frac{\kappa_t^{e}q_tK_t}{N_t^{e}}
+\iff -(1-\thke)\le\ell\,\thke
+\iff (1-\ell)\thke\le1.
+\end{equation}
+
+\paragraph{Net worth y capital agregado.} $N_t^{e}=\int_0^1 n_t^{e,i}\dd i=n_t^{e}$ y $N_t^{h}=n_t^{h}$. El capital físico agregado evoluciona exógenamente:
+\begin{equation}
+\frac{\dd K_t}{K_t}=g\,\dd t+\sigma\,\dd Z_t.
+\end{equation}
+
+\paragraph{Problemas de optimización.}
+\begin{align}
+\text{Experto:}\quad &\max_{\{C_t^{e},\thke\}}\E_t\!\left[\int_0^\infty e^{-\re t}\log(C_t^{e})\,\dd t\right]\\
+&\text{s.a.}\quad \dd n_t^{e}=\big[-C_t^{e}\,\dd t+n_t^{e}\big(\dd r_t+\thke(\dd r_t^{\kappa,e}-r_t)\big)\big],\quad (1-\ell)\thke\le1,\ \thke\ge0,\ n_0^{e}\ \text{dado};\notag\\[6pt]
+\text{Hogar:}\quad &\max_{\{C_t^{h},\thkh\}}\E_t\!\left[\int_0^\infty e^{-\rh t}\log(C_t^{h})\,\dd t\right]\\
+&\text{s.a.}\quad \dd n_t^{h}=\big[-C_t^{h}\,\dd t+n_t^{h}\big(\dd r_t+\thkh(\dd r_t^{\kappa,h}-r_t)\big)\big],\quad \thkh\ge0,\ n_0^{h}\ \text{dado}.\notag
+\end{align}
+Los portafolios son $\thke\equiv\dfrac{\kappa_t^{e}q_tK_t}{N_t^{e}}$ y $\thkh\equiv\dfrac{\kappa_t^{h}q_tK_t}{N_t^{h}}$. La evolución del capital individual es
+$\dfrac{\dd\check\kappa_t^{i}}{\check\kappa_t^{i}}=g\,\dd t+\sigma\,\dd Z_t+\dd\Delta_t^{\kappa,i}$.
+
+\paragraph{Market clearing.}
+\begin{equation}
+\underbrace{C_t^{e}+C_t^{h}=\aE K_t^{e}+\aH(\kappa_t^{h})K_t^{h}}_{\text{bienes}},\qquad
+\underbrace{K_t^{e}+K_t^{h}=K_t}_{\text{capital}},\qquad
+\text{deuda: limpia por Walras.}
+\end{equation}
+
+\subsection{Receta para resolver modelos macro}
+
+\begin{receta}[Paso a paso]
+\begin{enumerate}[label=\textbf{\arabic*.},leftmargin=2.4em]
+\item[\textbf{0.}] Postular agregados, procesos de precios y obtener procesos de retornos.
+\item Para $\check p:=c^{i}/n^{i}$ dado (ratio) y proceso del SDF$^{i}$ para cada $i$:
+  \begin{enumerate}[label=(\alph*)]
+  \item limpieza del mercado de bienes;
+  \item Teorema de Separación de Fisher: elección de portafolio $\theta$ + limpieza del mercado de activos.
+  \end{enumerate}
+\item Evolución de la variable de estado $\eta$ (y $K$) — \emph{ecuación forward}.
+\item Función valor — \emph{ecuación backward}.
+  \begin{enumerate}[label=(\alph*)]
+  \item Función valor como función de oportunidad de inversión $\omega$;
+  \item caso especial log utility: $\check p=c/n=\rho$.
+  \end{enumerate}
+\item Solución numérica.
+\item KFE (Kolmogorov forward): distribución estacionaria, \emph{fan charts}.
+\end{enumerate}
+\end{receta}
+
+\subsection{Paso 0: postular agregados y procesos}
+
+\paragraph{Agregación de capital y net worth.}
+\begin{align*}
+&\text{Dentro del sector } i:\ K_t^{i}=\int\kappa_t^{i}\,\dd i,\qquad
+\text{entre sectores}:\ K_t=\textstyle\sum_i K_t^{i},\ \ \frac{\dd K_t}{K_t}=g\,\dd t+\sigma\,\dd Z_t,\\
+&\text{Capital share}:\ \kappa_t^{i}=K_t^{i}/K_t.\\[4pt]
+&\text{Dentro del sector } i:\ N_t^{i}=\int n_t^{i}\,\dd i,\qquad
+\text{entre sectores}:\ N_t=\textstyle\sum_i N_t^{i},\\
+&\text{Net worth share}:\ \eta_t^{i}=N_t^{i}/N_t.
+\end{align*}
+
+\paragraph{Valor del stock de capital y SDF.}
+\[
+q_tK_t,\qquad \frac{\dd q_t}{q_t}=\mu_t^{q}\,\dd t+\sq\,\dd Z_t,
+\qquad
+\frac{\dd\xi_t^{i}}{\xi_t^{i}}=\underbrace{\mu_t^{\xi^{i}}}_{-r_t^{i}}\dd t+\underbrace{\sigma_t^{\xi^{i}}}_{-\vsig_t^{i}}\dd Z_t.
+\]
+
+\paragraph{Retorno del capital.} Con la regla del producto \eqref{eq:prod},
+\[
+\dd r_t^{\kappa,e}=\underbrace{\frac{\aE}{q_t}\dd t}_{\text{dividendos}}+\underbrace{\frac{\dd(q_tK_t^{e})}{q_tK_t^{e}}}_{\text{ganancia de capital}}.
+\]
+Con $\tfrac{\dd q_t}{q_t}=\mu_t^{q}\dd t+\sq\dd Z_t$ (=$A$) y $\tfrac{\dd K_t^{e}}{K_t^{e}}=g\dd t+\sigma\dd Z_t$ (=$B$), la regla $\tfrac{\dd X}{X}=\tfrac{\dd A}{A}+\tfrac{\dd B}{B}$ da
+\begin{align}
+\dd r_t^{\kappa,e}&=\Big(\frac{\aE}{q_t}+g+\mu_t^{q}+\sigma\sq\Big)\dd t+(\sigma+\sq)\dd Z_t,\\
+\dd r_t^{\kappa,h}&=\Big(\frac{\aH(\kappa_t^{h})}{q_t}+g+\mu_t^{q}+\sigma\sq\Big)\dd t+(\sigma+\sq)\dd Z_t.
+\end{align}
+
+\subsection{Estados de Markov y equilibrio}
+
+El equilibrio es un mapa de la historia de shocks a precios:
+\[
+\{Z_{s\in[0,t]}\}\ \longrightarrow\ \eta_t^{e}=\frac{N_t^{e}}{q_tK_t}\ \longrightarrow\ \text{precios }(q_t,\vsig_t^{i},r_t^{i},\theta_t^{i}).
+\]
+La historia de shocks determina $\eta_t$ y $\eta_t$ determina todos los precios: solo se necesita $\eta_t$ (no toda la historia).
+
+\begin{definicion}[Equilibrio]
+Todos los agentes optimizan eligiendo $C_t^{i}$ y $\thke$ (maximizan utilidad) y todos los mercados se vacían.
+\end{definicion}
+
+\begin{intuicion}[Big picture]
+Activos físicos $\to$ output $\to$ consumo/inversión $\to$ $\phi(\iota)-\delta$ capital $\to$ precio del riesgo $\to$ distribución de riqueza $\eta$ (su volatilidad mide cuánto fluctúa $\eta$; su drift, el crecimiento promedio de $\eta$) $\to$ función valor (determina el comportamiento precautorio) $\to$ consumo. El bucle de amplificación es:
+\[
+\eta_t\downarrow\ \Rightarrow\ q_t\downarrow\ \Rightarrow\ \text{colateral}\downarrow\ \Rightarrow\ \thke\uparrow\ \Rightarrow\ \vsig\uparrow\ \Rightarrow\ \eta_t\downarrow.
+\]
+\end{intuicion}
+
+\subsection{Benchmark determinístico ($\sigma=0$, utilidad log)}
+
+\paragraph{Elección individual.} Como $\aE\ge\aH(1-\kappa_t)$, los expertos son más productivos que los hogares, luego $\thkh=0$ (los hogares prefieren no tener capital) y $\kappa_t=\kappa_t^{e}=1$. Con utilidad log, $C_t^{i}=\rho^{i}n_t^{i}$, y
+\[
+N_t^{e}=\eta_tq_tK_t,\qquad N_t^{h}=(1-\eta_t)q_tK_t.
+\]
+
+\paragraph{Precio del capital (limpieza de bienes).}
+\[
+C_t^{e}+C_t^{h}=\re N_t^{e}+\rh N_t^{h}=\big(\re\eta_t+\rh(1-\eta_t)\big)q_tK_t,
+\]
+que igualado a la producción $\aE K_t$ (con $\kappa_t=1$) entrega
+\begin{equation}\label{eq:q-det}
+q_t=\frac{\aE}{\re\eta_t+\rh(1-\eta_t)}.
+\end{equation}
+
+\paragraph{Limpieza de capital.} De $\kappa_t^{e}+\kappa_t^{h}=1$ y $\thke=\dfrac{\kappa_t^{e}q_tK_t}{N_t^{e}}$,
+\[
+\thke\,\eta_tq_tK_t+\thkh(1-\eta_t)q_tK_t=q_tK_t.
+\]
+Como $\thkh=0$, se obtiene $\thke\eta_t=1$, es decir
+\begin{equation}
+\thke=\frac{1}{\eta_t},\qquad r_t^{\kappa,e}=r_t.
+\end{equation}
+
+\paragraph{Dinámica de $\eta_t$.} De la restricción presupuestaria (con $r_t^{\kappa,e}-r_t=0$ por $\sigma=0$),
+\[
+\frac{\dd N_t^{e}}{N_t^{e}}=-\underbrace{\frac{C_t^{e}}{N_t^{e}}}_{=\re}\dd t+r_t\dd t+\thke\underbrace{(r_t^{\kappa,e}-r_t)}_{0}\dd t,
+\quad\Rightarrow\quad
+\mu_t^{N^{e}}=-\re+r_t,\ \ \mu_t^{N^{h}}=-\rh+r_t.
+\]
+Con $N_t=N_t^{h}+N_t^{e}$,
+\[
+\mu_t^{N}=\eta_t\mu_t^{N^{e}}+(1-\eta_t)\mu_t^{N^{h}},
+\qquad
+\frac{\dot\eta_t}{\eta_t}=\mu_t^{N^{e}}-\mu_t^{N}=(1-\eta_t)\big(\mu_t^{N^{e}}-\mu_t^{N^{h}}\big).
+\]
+Como $\mu_t^{N^{e}}-\mu_t^{N^{h}}=-(\re-\rh)$,
+\begin{equation}\label{eq:eta-ode-det}
+\dot\eta_t=-(1-\eta_t)(\re-\rh)\eta_t
+\quad\Longleftrightarrow\quad
+\frac{\dd\eta_t}{\eta_t(1-\eta_t)}=-(\re-\rh)\,\dd t.
+\end{equation}
+
+\paragraph{Solución por fracciones parciales.} Con $\dfrac{1}{\eta_t(1-\eta_t)}=\dfrac{A}{\eta_t}+\dfrac{B}{1-\eta_t}$ se tiene $1=A(1-\eta_t)+B\eta_t$; evaluando en $\eta_t=0$ y $\eta_t=1$ resulta $A=B=1$. Entonces
+\[
+\int\!\Big(\frac{1}{\eta_t}+\frac{1}{1-\eta_t}\Big)\dd\eta_t=\int-(\re-\rh)\dd t
+\ \Rightarrow\
+\log\frac{\eta_t}{1-\eta_t}=-(\re-\rh)t+C.
+\]
+En $t=0$, $\dfrac{\eta_0}{1-\eta_0}=e^{C}$, de modo que $\dfrac{\eta_t}{1-\eta_t}=\dfrac{\eta_0}{1-\eta_0}e^{-(\re-\rh)t}$. Despejando:
+\begin{resultado}
+\begin{equation}\label{eq:eta-closed}
+\eta_t=\frac{\eta_0\,e^{-(\re-\rh)t}}{1-\eta_0+\eta_0\,e^{-(\re-\rh)t}}.
+\end{equation}
+\end{resultado}
+
+\begin{obs}
+El capital siempre lo tiene el sector más eficiente. El consumo está determinado por la distribución de riqueza, y ésta se mueve solo por las preferencias en el \emph{timing} del consumo:
+\[
+\re>\rh\Rightarrow \eta\to0,\qquad \re<\rh\Rightarrow \eta\to1\quad(t\to\infty).
+\]
+El precio del capital \eqref{eq:q-det} es constante ($q_t=\aE/\re$) si $\rh=\re$; en caso contrario aumenta con el tiempo, porque los agentes con menor propensión marginal al consumo se enriquecen.
+\end{obs}
+
+\subsection{Basak--Cuoco: riesgo agregado sin restricción}
+
+Ahora $\sigma>0$, $\ell\to\infty$ (sin restricción de apalancamiento) y $\aH\to-\infty$ (hogares no productivos). Se plantea el Hamiltoniano del experto:
+\begin{align}
+H_t^{e}&=\underbrace{e^{-\re t}\log C_t^{e}}_{\text{utilidad}}
++\underbrace{\xi_t^{e}n_t^{e}\mu_t^{n^{e}}}_{\text{drift}}
+-\underbrace{\vsig_t^{e}\xi_t^{e}n_t^{e}\sigma_t^{n^{e}}}_{\text{costo del riesgo}}\notag\\
+&=e^{-\re t}\log C_t^{e}
++\xi_t^{e}\Big[-C_t^{e}+n_t^{e}r_t+n_t^{e}\thke\Big(\tfrac{\aE}{q_t}+g+\mu_t^{q}+\sigma\sq-r_t\Big)\Big]
+-\vsig_t^{e}\xi_t^{e}n_t^{e}\theta^{\kappa,e}(\sigma+\sq),
+\end{align}
+con
+\[
+\frac{\dd n_t^{e}}{n_t^{e}}=\underbrace{\Big(-\frac{C_t^{e}}{n_t^{e}}+r_t+\thke\big(\tfrac{\aE}{q_t}+g+\mu_t^{q}+\sigma\sq-r_t\big)\Big)}_{\mu_t^{n^{e}}}\dd t
++\underbrace{\thke(\sigma+\sq)}_{\sigma_t^{n^{e}}}\dd Z_t.
+\]
+
+\paragraph{FOC de consumo.}
+\[
+\frac{\partial H^{e}}{\partial C_t^{e}}=e^{-\re t}\frac{1}{C_t^{e}}-\xi_t^{e}=0
+\ \Rightarrow\ e^{-\re t}(C_t^{e})^{-1}=\xi_t^{e},
+\qquad\text{con log utility } C_t^{e}=\re n_t^{e}.
+\]
+
+\paragraph{FOC de portafolio.}
+\[
+\frac{\partial H_t^{e}}{\partial\thke}
+=\xi_t^{e}n_t^{e}\Big(\tfrac{\aE}{q_t}+g+\mu_t^{q}+\sigma\sq-r_t\Big)-\vsig_t^{e}\xi_t^{e}n_t^{e}(\sigma+\sq)=0,
+\]
+\begin{equation}\label{eq:bc-portfolio}
+\boxed{\ \frac{\aE}{q_t}+g+\mu_t^{q}+\sigma\sq-r_t=\vsig_t^{e}(\sigma+\sq).\ }
+\end{equation}
+
+\paragraph{Ecuación de co-estado.} Con $\dfrac{\partial H_t^{e}}{\partial n_t^{e}}=\xi_t^{e}r_t$,
+\[
+\dd\xi_t^{e}=-r_t\xi_t^{e}\dd t-\vsig_t^{e}\xi_t^{e}\dd Z_t.
+\]
+Por otro lado, aplicando Itô a $f(t,C)=e^{-\re t}/C=\xi_t^{e}$ (FOC de consumo), con
+$\partial_tf=-\re\xi_t^{e}$, $\partial_Cf=-\xi_t^{e}/C_t^{e}$, $\partial_{CC}f=2\xi_t^{e}/(C_t^{e})^2$ y $\tfrac{\dd C_t^{e}}{C_t^{e}}=\mu_t^{c^{e}}\dd t+\sigma_t^{c^{e}}\dd Z_t$:
+\[
+\frac{\dd\xi_t^{e}}{\xi_t^{e}}=\big[-\re-\mu_t^{c^{e}}+(\sigma_t^{c^{e}})^2\big]\dd t-\sigma_t^{c^{e}}\dd Z_t.
+\]
+Igualando con la ecuación de co-estado,
+\[
+\big[-\re-\mu_t^{c^{e}}+(\sigma_t^{c^{e}})^2\big]\dd t-\sigma_t^{c^{e}}\dd Z_t=-r_t\dd t-\vsig_t^{e}\dd Z_t,
+\]
+de la parte de difusión, $\vsig_t^{e}=\sigma_t^{c^{e}}$. Como $C_t^{e}=\re n^{e}$ implica $\tfrac{\dd C_t^{e}}{C_t^{e}}=\tfrac{\dd n_t^{e}}{n_t^{e}}$,
+\begin{equation}\label{eq:bc-price-risk}
+\vsig_t^{e}=\sigma_t^{c^{e}}=\sigma_t^{n^{e}}=\thke(\sigma+\sq).
+\end{equation}
+Para los hogares, $C_t^{h}=\rh n^{h}$ y $\theta^{\kappa,h}=0$ (no tienen capital, solo lo prestan), de modo que $\vsig_t^{h}=\theta^{\kappa,h}(\sigma+\sq)=0$.
+
+\paragraph{Evolución de $\eta_t=N_t^{e}/q_tK_t$.} De la restricción presupuestaria y la FOC de portafolio $\vsig_t^{e}(\sigma+\sq)=$ exceso de retorno,
+\[
+\frac{\dd N_t^{e}}{N_t^{e}}=\underbrace{\Big(-\frac{C_t^{e}}{n_t^{e}}+r_t+\thke\vsig_t^{e}(\sigma+\sq)\Big)}_{\mu_t^{N^{e}}}\dd t+\underbrace{\thke(\sigma+\sq)}_{\sigma_t^{N^{e}}}\dd Z_t,
+\]
+\[
+\frac{\dd(q_tK_t)}{q_tK_t}=\underbrace{(g+\mu_t^{q}+\sigma\sq)}_{\mu_t^{qk}}\dd t+\underbrace{(\sigma+\sq)}_{\sigma_t^{qk}}\dd Z_t.
+\]
+Imponiendo no arbitraje en hogares, $r_t^{\kappa,h}-r_t=\vsig_t^{h}(\sigma+\sq)=0$, de donde $r_t^{\kappa,h}=r_t$ y $\vsig_t^{h}=0$. Usando la relación de expertos \eqref{eq:bc-portfolio} (no la de hogares, pues $\aH\to-\infty$),
+\[
+\mu_t^{qk}=g+\mu_t^{q}+\sigma\sq=r_t-\frac{\aE}{q_t}+\vsig_t^{e}(\sigma+\sq),
+\]
+\[
+\frac{\dd(q_tK_t)}{q_tK_t}=\Big[r_t-\frac{\aE}{q_t}+\vsig_t^{e}(\sigma+\sq)\Big]\dd t+(\sigma+\sq)\dd Z_t.
+\]
+Aplicando la regla del cociente \eqref{eq:coc} con $X_t=N_t^{e}$, $Y_t=q_tK_t$, $\sigma_t^{N^{e}}=\thke(\sigma+\sq)$, $\sigma_t^{qk}=\sigma+\sq$:
+\[
+\mu_t^{\eta}=\mu_t^{N^{e}}-\mu_t^{qk}+(\sigma+\sq)\big[(\sigma+\sq)-\thke(\sigma+\sq)\big]
+=\mu_t^{N^{e}}-\mu_t^{qk}+(1-\thke)(\sigma+\sq)^2.
+\]
+Sustituyendo $C_t^{e}=\re n^{e}$, $\vsig_t^{e}=\thke(\sigma+\sq)$ y notando que $\vsig_t^{e}-(\sigma+\sq)=-(1-\thke)(\sigma+\sq)$,
+\begin{equation}\label{eq:bc-eta-1}
+\frac{\dd\eta_t}{\eta_t}=\Big[-\re+\frac{\aE}{q_t}+(1-\thke)^2(\sigma+\sq)^2\Big]\dd t-(1-\thke)(\sigma+\sq)\dd Z_t.
+\end{equation}
+
+\paragraph{Market clearing.} Con $C_t^{i}=\rho^{i}N_t^{i}$, $N_t^{e}=\eta_tq_tK_t$, $N_t^{h}=(1-\eta_t)q_tK_t$,
+\[
+C=\re\eta_tq_tK_t+\rh(1-\eta_t)q_tK_t=\aE K_t
+\ \Rightarrow\
+q_t=\frac{\aE}{\re\eta_t+\rh(1-\eta_t)},
+\qquad \thke=\frac{q_tK_t}{N_t^{e}}=\frac{1}{\eta_t}.
+\]
+
+\subsubsection*{Derivación de $\sq$}
+
+De $q_t=q(\eta_t)$, aplicando Itô $\dd f(\eta_t)=f'(\eta_t)\dd\eta_t+\tfrac12 f''(\eta_t)(\dd\eta_t)^2$, la parte que multiplica $\dd Z_t$ es $f'(\eta_t)\sigma_t^{\eta}\eta_t\dd Z_t$, luego
+\[
+\sq=\frac{q'(\eta_t)\eta_t}{q_t}\sigma_t^{\eta}.
+\]
+Por la regla del cociente (cálculo ordinario) sobre $q_t=\aE/(\re\eta_t+\rh(1-\eta_t))$,
+\[
+q'(\eta_t)=-\frac{\aE(\re-\rh)}{(\re\eta_t+\rh(1-\eta_t))^2},
+\qquad
+\frac{q'(\eta_t)}{q_t}=-\frac{(\re-\rh)}{\re\eta_t+\rh(1-\eta_t)}.
+\]
+Con $\thke=1/\eta_t$ se tiene $\sigma_t^{\eta}=-(1-\thke)(\sigma+\sq)=\dfrac{1-\eta_t}{\eta_t}(\sigma+\sq)$. Sustituyendo,
+\[
+\sq=-\frac{(\re-\rh)(1-\eta_t)}{\re\eta_t+\rh(1-\eta_t)}(\sigma+\sq).
+\]
+Despejando (el factor entre paréntesis se simplifica a $\re/(\re\eta_t+\rh(1-\eta_t))$),
+\begin{resultado}
+\begin{equation}\label{eq:bc-sq}
+\sq=-\frac{(\re-\rh)(1-\eta_t)}{\re}\,\sigma,
+\qquad
+\sigma+\sq=\frac{\re\eta_t+\rh(1-\eta_t)}{\re}\,\sigma.
+\end{equation}
+\end{resultado}
+
+\subsubsection*{Drift y volatilidad de $\eta_t$}
+
+Usando $\thke=1/\eta_t\Rightarrow(1-\thke)^2=\dfrac{(1-\eta_t)^2}{\eta_t^2}$ y $-\re+\dfrac{\aE}{q_t}=-\re+\re\eta_t+\rh(1-\eta_t)=-(1-\eta_t)(\re-\rh)$, el drift de \eqref{eq:bc-eta-1} es
+\[
+-\re+\frac{\aE}{q_t}+(1-\thke)^2(\sigma+\sq)^2
+=-(1-\eta_t)(\re-\rh)+\frac{(1-\eta_t)^2}{\eta_t^2}\frac{\big(\re\eta_t+\rh(1-\eta_t)\big)^2}{(\re)^2}\sigma^2.
+\]
+La volatilidad es $-(1-\thke)(\sigma+\sq)=\dfrac{1-\eta_t}{\eta_t}\dfrac{\re\eta_t+\rh(1-\eta_t)}{\re}\sigma$. Reuniendo:
+\begin{resultado}
+\begin{multline}\label{eq:bc-eta-final}
+\frac{\dd\eta_t}{\eta_t}=(1-\eta_t)\bigg[\underbrace{-(\re-\rh)}_{\substack{\text{dif.\ de tasas}\\\text{de consumo}}}
++\underbrace{\frac{(1-\eta_t)\big[\re\eta_t+\rh(1-\eta_t)\big]^2}{\eta_t^2(\re)^2}\sigma^2}_{\text{risk premium de los expertos}}\bigg]\dd t\\
++\underbrace{\frac{1-\eta_t}{\eta_t}\frac{\re\eta_t+\rh(1-\eta_t)}{\re}\sigma}_{\text{cantidad de riesgo}}\dd Z_t.
+\end{multline}
+\end{resultado}
+
+\begin{obs}
+$\eta_t$ fluctúa con los shocks macro porque los expertos están apalancados. A diferencia de la versión previa (que quedaba en función de parámetros de equilibrio $\thke,q_t,r_t$), \eqref{eq:bc-eta-final} está en función de primitivas y ya puede resolverse y simularse numéricamente.
+\end{obs}
+
+\subsection{Kiyotaki--Moore (1997): restricción de colateral}
+
+Sin riesgo agregado ($\sigma=0$) y con \emph{leverage constraint} $\ell\le1$. Los hogares producen y $\aH(\kappa^{h})$ es decreciente en $\kappa^{h}$.
+
+\paragraph{Sectores.}
+\begin{align*}
+\text{Experto (Farmers):}\quad & Y_t^{e}=\aE K_t^{e}=\aE\kappa_t^{e}K_t,\quad C_t^{e},\quad \max\int_0^\infty e^{-\re t}\log(C_t^{e})\dd t;\\
+\text{Hogar (Gatherers):}\quad & Y_t^{h}=\aH(\kappa_t^{h})K_t^{h}=\aH(\cdot)\kappa_t^{h}K_t,\quad C_t^{h},\quad \max\int_0^\infty e^{-\rh t}\log(C_t^{h})\dd t.
+\end{align*}
+
+\paragraph{Supuestos.}
+\begin{itemize}[leftmargin=2.2em]
+\item Expertos más impacientes: $\re>\rh$.
+\item Productividad $\aH(\kappa^{h})\le\aE$ (igualdad en $\kappa^{h}=0$), retornos constantes a escala pero $\aH(\cdot)$ decreciente en $\kappa^{h}$.
+\item No emiten acciones.
+\item Deuda con restricción de colateral: $\dfrac{D_t^{e}}{N_t^{e}}\le\dfrac{\ell\kappa_t^{e}q_tK_t}{N_t^{e}}\iff-(1-\thke)\le\ell\thke$.
+\end{itemize}
+
+\paragraph{Hamiltonianos.} Con $\lambda_t^{e}$ el multiplicador de la restricción de apalancamiento,
+\begin{align}
+H_t^{e}&=e^{-\re t}u(C_t^{e})+\xi_t^{e}\big[-C_t^{e}+n_t^{e}\big(r_t+\thke(r_t^{\kappa,e}-r_t)\big)\big]+\xi_t n_t^{e}\lambda_t^{e}\big(1-(1-\ell)\thke\big),\\
+H_t^{h}&=e^{-\rh t}u(C_t^{h})+\xi_t\big[-C_t^{h}+n_t^{h}\big(r_t+\thkh(r_t^{\kappa,h}-r_t)\big)\big].
+\end{align}
+
+\paragraph{FOCs (Teorema de Separación de Fisher).}
+\[
+\begin{cases}
+e^{-\re t}u'(C_t^{e})=\xi_t^{e}\\
+e^{-\rh t}u'(C_t^{h})=\xi_t^{h}
+\end{cases}
+\Rightarrow C_t^{i}=\rho^{i}n_t^{i}\ (\text{log}),
+\qquad
+\begin{cases}
+r_t^{\kappa,e}-r_t=(1-\ell)\lambda_t^{e}\\
+r_t^{\kappa,h}-r_t=0\ (\text{sin constraint})
+\end{cases}.
+\]
+
+\paragraph{Retornos del capital.}
+\[
+\begin{cases}
+r_t^{\kappa,e}=\dfrac{\aE}{q_t}+\dfrac{1}{q_t}\dfrac{\dd q_t}{\dd t}\\[6pt]
+r_t^{\kappa,h}=\dfrac{\aH(\kappa_t^{h})}{q_t}+\dfrac{1}{q_t}\dfrac{\dd q_t}{\dd t}
+\end{cases}
+\qquad
+r_t=\frac{\aH(\kappa_t^{h})}{q_t}+\frac{\dot q_t}{q_t}\ \ (\text{no arbitraje en hogares}).
+\]
+
+\paragraph{Evolución del net worth.} Los equilibrios son funciones del estado (net worth), $\eta_t=\dfrac{N_t^{e}}{N_t}=\dfrac{N_t^{e}}{q_tK_t}$. De la restricción presupuestaria, sustituyendo $C_t^{e}/n_t^{e}=\re$ y $r_t^{\kappa,e}-r_t=(1-\ell)\lambda_t^{e}$,
+\[
+\mu_t^{N^{e}}=-\re+r_t+\thke(1-\ell)\lambda_t^{e},
+\qquad
+\mu_t^{N^{h}}=-\rh+r_t+\thkh\underbrace{(r_t^{\kappa,h}-r_t)}_{0}=-\rh+r_t.
+\]
+
+\paragraph{Drift de $\eta_t$ (con $\sigma=0$, determinístico).}
+\[
+\frac{\dot\eta_t}{\eta_t}=\mu_t^{N^{e}}-\mu_t^{N},
+\qquad
+\mu_t^{N}=\eta_t\mu_t^{N^{e}}+(1-\eta_t)\mu_t^{N^{h}},
+\]
+\[
+\mu_t^{\eta}=(1-\eta_t)\big(\mu_t^{N^{e}}-\mu_t^{N^{h}}\big)
+=(1-\eta_t)\big[-(\re-\rh)+\thke(1-\ell)\lambda_t^{e}\big].
+\]
+Usando $r_t^{\kappa,e}-r_t=(1-\ell)\lambda_t^{e}$ y $r_t^{\kappa,h}=r_t$,
+\[
+(1-\ell)\lambda_t^{e}=r_t^{\kappa,e}-r_t=r_t^{\kappa,e}-r_t^{\kappa,h}=\frac{\aE}{q_t}-\frac{\aH(\kappa_t^{h})}{q_t}=\frac{\aE-\aH(\kappa_t^{h})}{q_t},
+\]
+\begin{resultado}
+\begin{equation}\label{eq:km-eta}
+\mu_t^{\eta}=(1-\eta_t)\Big[-(\re-\rh)+\thke\,\frac{\aE-\aH(\kappa_t^{h})}{q_t}\Big].
+\end{equation}
+\end{resultado}
+
+\paragraph{Sistema de equilibrio (mercados de bienes).}
+\begin{align}
+C_t&=\re N_t^{e}+\rh N_t^{h}=\re\eta_tq_tK+\rh(1-\eta_t)q_tK,\\
+Y_t&=\aE K_t^{e}+\aH(\kappa_t^{h})K_t^{h}=\aE\kappa_tK+\aH(1-\kappa_t)K,
+\end{align}
+de donde
+\begin{equation}
+q_t\big[(\re-\rh)\eta_t+\rh\big]=\kappa_t\aE+(1-\kappa_t)\aH(1-\kappa_t).
+\end{equation}
+
+\medskip
+\noindent\emph{(Mercados de capital: cierre por $\kappa_t^{e}+\kappa_t^{h}=1$.)}
+
+\end{document}
