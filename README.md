@@ -7,7 +7,7 @@ Personal lecture notes written in LaTeX, with step-by-step derivations of the ma
 ### Macroeconomics and Macro-Finance
 | Notes | Topics | PDF |
 |---|---|---|
-| **Macroeconomic Theory** | Microfoundations, complete markets, Solow growth model, Ramsey–Cass–Koopmans model, derivation of the New Keynesian model 
+| **Macroeconomic Theory** | Microfoundations, complete markets framework, Solow growth model, Ramsey–Cass–Koopmans model, derivation of the New Keynesian model and its implications, monetary theory 
 | **Continuous-Time Macro-Finance** | Itô calculus, consumption–portfolio choice and the HJB equation, stochastic maximum principle, two-sector macro-finance model, Basak–Cuoco, Kiyotaki–Moore 
 
 ### Econometrics
